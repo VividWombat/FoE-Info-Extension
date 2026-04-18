@@ -42,14 +42,14 @@ const OVERLAY_STYLE = `
   right: 16px;
   z-index: 2147483640;
   width: 244px;
-  background: linear-gradient(180deg, #191007f2, #0e0a08f5);
-  border: 1px solid #4b3518;
+  background: linear-gradient(180deg, #3d2710f5, #2a1a08f5);
+  border: 1px solid #6b4820;
   border-top: 2px solid #cf9932;
   border-radius: 8px;
   padding: 10px 12px 8px;
   font-family: Georgia, 'Times New Roman', serif;
   color: #ecd9b4;
-  box-shadow: 0 8px 28px rgba(0,0,0,0.82);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.65), inset 0 1px 0 rgba(207,153,50,0.12);
   user-select: none;
 }
 #foe-info-overlay.hidden { display: none; }
@@ -86,7 +86,7 @@ const OVERLAY_STYLE = `
   scrollbar-width: thin;
   scrollbar-color: #4b3518 transparent;
 }
-.foe-info-section { border-bottom: 1px solid rgba(207,153,50,0.1); }
+.foe-info-section { border-bottom: 1px solid rgba(207,153,50,0.15); }
 .foe-info-section:last-of-type { border-bottom: none; }
 .foe-info-sec-hdr {
   display: flex;
@@ -118,7 +118,7 @@ const OVERLAY_STYLE = `
 .foe-info-muted { color: #9d8b6c; font-size: 10px; }
 .foe-info-bar {
   height: 3px;
-  background: rgba(207,153,50,0.15);
+  background: rgba(207,153,50,0.22);
   border-radius: 2px;
   margin: 4px 0 2px;
   overflow: hidden;
