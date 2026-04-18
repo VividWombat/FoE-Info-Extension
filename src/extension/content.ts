@@ -23,6 +23,13 @@ type HudPayload = {
   gbLevel?: number;
   gbCurrent?: number;
   gbTotal?: number;
+  gbOwner?: string;
+  gbPlace?: number;
+  gbLock?: number;
+  gbProfit?: number;
+  gbBe?: number;
+  gbCustom?: number;
+  gbCustomPct?: number;
   wcLevel?: number;
   wcPoints?: number;
   wcThreshold?: number;
@@ -257,6 +264,26 @@ const ensureOverlay = (): HTMLElement => {
             <span class="foe-info-muted" id="fi-gb-level"></span>
           </div>
           ${barHtml('fi-gb-bar', 'fi-gb-progress')}
+          <div class="foe-info-row" id="fi-gb-owner-row">
+            <span class="foe-info-label" id="fi-gb-owner"></span>
+            <span class="foe-info-muted" id="fi-gb-place"></span>
+          </div>
+          <div class="foe-info-row" id="fi-gb-lock-row">
+            <span class="foe-info-label">Lock</span>
+            <span class="foe-info-value" id="fi-gb-lock">-</span>
+          </div>
+          <div class="foe-info-row" id="fi-gb-profit-row">
+            <span class="foe-info-label" id="fi-gb-profit-label">Profit</span>
+            <span class="foe-info-value" id="fi-gb-profit">-</span>
+          </div>
+          <div class="foe-info-row" id="fi-gb-custom-row">
+            <span class="foe-info-label" id="fi-gb-custom-label">-</span>
+            <span class="foe-info-value" id="fi-gb-custom">-</span>
+          </div>
+          <div class="foe-info-row" id="fi-gb-be-row">
+            <span class="foe-info-label">BE</span>
+            <span class="foe-info-value" id="fi-gb-be">-</span>
+          </div>
         </div>
       </div>
       <div class="foe-info-section" id="fi-wrap-wc" style="display:none">
@@ -342,6 +369,31 @@ const updateOverlay = (payload: HudPayload): void => {
       setText('fi-gb-name', payload.gbName!);
       setText('fi-gb-level', `Lv ${payload.gbLevel ?? '?'}`);
       setBar('fi-gb-bar', 'fi-gb-progress', payload.gbCurrent ?? 0, payload.gbTotal ?? 1, ' FP');
+
+      const hasSpot = typeof payload.gbPlace === 'number';
+      const spotRows = ['fi-gb-owner-row', 'fi-gb-lock-row', 'fi-gb-profit-row', 'fi-gb-custom-row', 'fi-gb-be-row'];
+      spotRows.forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = hasSpot ? '' : 'none';
+      });
+
+      if (hasSpot) {
+        const ordinals = ['', '1st', '2nd', '3rd', '4th', '5th'];
+        setText('fi-gb-owner', payload.gbOwner || '');
+        setText('fi-gb-place', `${ordinals[payload.gbPlace!] ?? payload.gbPlace} Place`);
+        setText('fi-gb-lock', `${fmt(payload.gbLock)} FP`);
+
+        const profit = payload.gbProfit ?? 0;
+        setText('fi-gb-profit-label', profit >= 0 ? 'Profit' : 'Loss');
+        setText('fi-gb-profit', `${fmt(Math.abs(profit))} FP`);
+        const profitEl = document.getElementById('fi-gb-profit');
+        if (profitEl) profitEl.style.color = profit >= 0 ? '#8aab6c' : '#e06c75';
+
+        const pct = payload.gbCustomPct ?? 1.9;
+        setText('fi-gb-custom-label', `${pct}×`);
+        setText('fi-gb-custom', `${fmt(payload.gbCustom)} FP`);
+        setText('fi-gb-be', `${fmt(payload.gbBe)} FP`);
+      }
     }
   }
 

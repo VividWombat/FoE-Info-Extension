@@ -36,6 +36,31 @@ import {
 // import '../../css/main.css';
 import BigNumber from 'bignumber.js';
 import { friends, guildMembers, hoodlist } from './OtherPlayerService';
+export type HudGbSpot = {
+  place: number;
+  owner: string;
+  lock: number;
+  profit: number;
+  be: number;
+  custom: number;
+  customPct: number;
+};
+
+export let hudGbSpot: HudGbSpot | null = null;
+
+function captureHudSpot(place: number): void {
+  if (hudGbSpot) return;
+  hudGbSpot = {
+    place,
+    owner: PlayerName,
+    lock: Donation.toNumber(),
+    profit: Number(Profit),
+    be: RewardFP.toNumber(),
+    custom: donateCustom.toNumber(),
+    customPct: currentPercent / 100,
+  };
+}
+
 var Top = [0, 0, 0, 0, 0, 0];
 var GBrewards = [0, 0, 0, 0, 0];
 var Reward = [0, 0, 0, 0, 0];
@@ -72,6 +97,7 @@ export function contributeForgePoints(msg) {
 }
 
 export function showGreatBuldingDonation() {
+  hudGbSpot = null;
   var outputHTML = '';
   var donorsHTML = '';
   overview.innerHTML = '';
@@ -210,6 +236,7 @@ export function showGreatBuldingDonation() {
     getSafe(1);
     console.debug('RewardFP/Donation/Profit ', RewardFP, Donation, Profit);
     if (Donation.isLessThan(BigNumber(remaining))) {
+      captureHudSpot(1);
       if (Profit >= 0) {
         olddonationHTML += `<p class="invest-good">1st Place<br><span data-i18n="lock">Lock</span>: ${Donation}FP<br><span data-i18n="profit">Profit</span>: ${Profit} (${Percent}%)<br>`;
         newdonationHTML += gbTabSafe(
@@ -263,6 +290,7 @@ export function showGreatBuldingDonation() {
       getPlaceValues(2);
       getSafe(2);
       if (Donation.isLessThan(BigNumber(remaining))) {
+        captureHudSpot(2);
         if (Profit >= 0) {
           olddonationHTML += `<p class="invest-good">2nd Place<br><span data-i18n="lock">Lock</span>: ${Donation}FP<br><span data-i18n="profit">Profit</span>: ${Profit} (${Percent}%)<br>`;
           newdonationHTML += gbTabSafe(
@@ -322,6 +350,7 @@ export function showGreatBuldingDonation() {
           currentPercent,
         );
         if (Donation.isLessThan(BigNumber(remaining))) {
+          captureHudSpot(3);
           if (Profit >= 0) {
             olddonationHTML += `<p class="invest-good">3rd Place<br><span data-i18n="lock">Lock</span>: ${Donation}FP<br><span data-i18n="profit">Profit</span>: ${Profit} (${Percent}%)<br>`;
             newdonationHTML += gbTabSafe(
@@ -373,6 +402,7 @@ export function showGreatBuldingDonation() {
           getPlaceValues(4);
           getSafe(4);
           if (Donation.isLessThan(BigNumber(remaining))) {
+            captureHudSpot(4);
             if (Profit >= 0) {
               olddonationHTML += `<p class="invest-good">4th Place<br><span data-i18n="lock">Lock</span>: ${Donation}FP<br><span data-i18n="profit">Profit</span>: ${Profit} (${Percent}%)<br>`;
               newdonationHTML += gbTabSafe(
@@ -426,6 +456,7 @@ export function showGreatBuldingDonation() {
             getPlaceValues(5);
             getSafe(5);
             if (Donation.isLessThan(BigNumber(remaining))) {
+              captureHudSpot(5);
               if (Profit >= 0) {
                 olddonationHTML += `<p class="invest-good">5th Place<br><span data-i18n="lock">Lock</span>: ${Donation}FP<br><span data-i18n="profit">Profit</span>: ${Profit} (${Percent}%)<br>`;
                 newdonationHTML += gbTabSafe(

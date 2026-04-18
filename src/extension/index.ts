@@ -92,6 +92,7 @@ import {
   handleRewardServiceRequest,
 } from './services/RewardAndBlueprintRequestHandler';
 import { handleWorldChallengeRequest, hudWcState } from './services/WorldChallengeRequestHandler';
+import { hudGbSpot } from './services/GreatBuildingsService';
 import { connectWebSocket, disconnectWebSocket } from './services/WebSocketService';
 import setOptions, { showOptions } from './state/showOptions';
 import '../css/main.scss';
@@ -238,6 +239,13 @@ type HudPayload = {
   gbLevel?: number;
   gbCurrent?: number;
   gbTotal?: number;
+  gbOwner?: string;
+  gbPlace?: number;
+  gbLock?: number;
+  gbProfit?: number;
+  gbBe?: number;
+  gbCustom?: number;
+  gbCustomPct?: number;
   // World Challenge (DevTools WS)
   wcLevel?: number;
   wcPoints?: number;
@@ -286,6 +294,13 @@ const buildHudPayload = (): HudPayload => {
     gbLevel: GBselected.name ? GBselected.level : undefined,
     gbCurrent: GBselected.name ? GBselected.current : undefined,
     gbTotal: GBselected.name ? GBselected.total : undefined,
+    gbOwner: hudGbSpot?.owner || undefined,
+    gbPlace: hudGbSpot?.place,
+    gbLock: hudGbSpot?.lock,
+    gbProfit: hudGbSpot?.profit,
+    gbBe: hudGbSpot?.be,
+    gbCustom: hudGbSpot?.custom,
+    gbCustomPct: hudGbSpot?.customPct,
     // World Challenge
     wcLevel: hudWcState?.level,
     wcPoints: hudWcState?.points,
