@@ -99,6 +99,7 @@ function save_options() {
 
   tool.language = document.getElementById('language').value;
   tool.uiMode = document.getElementById('uiMode').value;
+  tool.theme = document.getElementById('theme').value;
   tool.designPreview = (document.getElementById('designPreview') as HTMLInputElement).checked;
   tool.showHud = (document.getElementById('showHud') as HTMLInputElement).checked;
   var targets = document.getElementById('targets').value;
@@ -141,6 +142,7 @@ function save_options() {
       tool: {
         language: tool.language,
         uiMode: tool.uiMode,
+        theme: tool.theme,
         designPreview: tool.designPreview,
         showHud: tool.showHud,
       },
@@ -194,6 +196,7 @@ function restore_options() {
         document.getElementById('language').value = items.tool.language;
         document.getElementById('uiMode').value =
           items.tool.uiMode || 'classic';
+        document.getElementById('theme').value = items.tool.theme || 'auto';
         (document.getElementById('designPreview') as HTMLInputElement).checked =
           !!items.tool.designPreview;
         (document.getElementById('showHud') as HTMLInputElement).checked =

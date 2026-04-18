@@ -384,6 +384,17 @@ const applyTheme = (themeName: unknown) => {
   document.body.classList.toggle('theme-light', normalizedTheme === 'light');
 };
 
+let themePreference: 'auto' | 'light' | 'dark' = 'auto';
+
+const applyThemePreference = (pref: unknown) => {
+  themePreference = pref === 'light' ? 'light' : pref === 'dark' ? 'dark' : 'auto';
+  if (themePreference === 'auto') {
+    applyTheme(browser.devtools.panels.themeName);
+  } else {
+    applyTheme(themePreference);
+  }
+};
+
 applyUiMode(panelParams.get('uiMode'));
 applyTheme(browser.devtools.panels.themeName);
 
@@ -391,6 +402,7 @@ browser.storage.local.get('tool').then((result: any) => {
   if (result?.tool?.uiMode) {
     applyUiMode(result.tool.uiMode);
   }
+  applyThemePreference(result?.tool?.theme);
   applyDesignPreview(!!result?.tool?.designPreview);
 });
 // if (window.matchMedia &&
@@ -812,7 +824,9 @@ window.addEventListener(
 window
   .matchMedia('(prefers-color-scheme: dark)')
   .addEventListener('change', ({ matches }) => {
-    applyTheme(matches ? 'dark' : 'light');
+    if (themePreference === 'auto') {
+      applyTheme(matches ? 'dark' : 'light');
+    }
   });
 function onEvent(message: unknown, params: unknown) {
   console.debug(message, params);
@@ -1439,6 +1453,7 @@ function storageChange(
       }
       console.debug(language);
       applyUiMode(toolSettings?.uiMode);
+      applyThemePreference(toolSettings?.theme);
       applyDesignPreview(!!toolSettings?.designPreview);
     } else if (key == 'targets') {
       // console.debug(storageChange.newValue,targetsTopic);
