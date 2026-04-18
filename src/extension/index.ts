@@ -73,6 +73,7 @@ import {
 import {
   availableFP,
   getPlayerResources,
+  getPlayerResourceBag,
   getResourceDefinitions,
   ResourceDefs,
   Resources,
@@ -1072,6 +1073,7 @@ function handleRequestFinished(request: any) {
               helper,
               getResourceDefinitions,
               getPlayerResources,
+              getPlayerResourceBag,
               MyInfo,
               showOptions,
               citystats,

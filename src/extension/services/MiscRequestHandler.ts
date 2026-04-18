@@ -54,6 +54,7 @@ type MiscDeps = {
   };
   getResourceDefinitions: (msg: MiscMessage) => void;
   getPlayerResources: (msg: MiscMessage) => void;
+  getPlayerResourceBag: (msg: MiscMessage) => void;
   MyInfo: {
     name?: string;
     id?: number;
@@ -101,6 +102,7 @@ export function handleMiscRequest(msg: MiscMessage, deps: MiscDeps): boolean {
     helper,
     getResourceDefinitions,
     getPlayerResources,
+    getPlayerResourceBag,
     MyInfo,
     showOptions,
     citystats,
@@ -195,6 +197,8 @@ export function handleMiscRequest(msg: MiscMessage, deps: MiscDeps): boolean {
       getResourceDefinitions(msg);
     } else if (msg.requestMethod === 'getPlayerResources') {
       getPlayerResources(msg);
+    } else if (msg.requestMethod === 'getPlayerResourceBag') {
+      getPlayerResourceBag(msg);
     } else {
       return false;
     }

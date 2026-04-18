@@ -35,10 +35,9 @@ function loadResourceDefs(msg: Array<Record<string, unknown>>) {
   });
 }
 
-export function getPlayerResources(msg: Record<string, unknown>) {
-  if (msg.responseData && ResourceDefs) {
-    Resources = (msg.responseData as Record<string, unknown>)
-      .resources as Record<string, unknown>;
+export function updatePlayerResources(bag: Record<string, unknown>) {
+  if (!bag || !ResourceDefs) return;
+  Resources = bag;
     availableFP = Resources.strategy_points as number;
     if (document.getElementById('availableFPID'))
       document.getElementById('availableFPID')!.textContent = String(
@@ -89,7 +88,19 @@ export function getPlayerResources(msg: Record<string, unknown>) {
         .getElementById('goodsCopyID')!
         .addEventListener('click', goodsCopy);
     }
-  }
+}
+
+export function getPlayerResources(msg: Record<string, unknown>) {
+  const rd = msg.responseData as Record<string, unknown> | undefined;
+  const bag = rd?.resources as Record<string, unknown> | undefined;
+  if (bag) updatePlayerResources(bag);
+}
+
+export function getPlayerResourceBag(msg: Record<string, unknown>) {
+  const rd = msg.responseData as Record<string, unknown> | undefined;
+  const outerResources = rd?.resources as Record<string, unknown> | undefined;
+  const bag = outerResources?.resources as Record<string, unknown> | undefined;
+  if (bag) updatePlayerResources(bag);
 }
 
 export function setResources(resource: string, needed = 0) {
