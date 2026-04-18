@@ -1209,6 +1209,8 @@ function handleRequestFinished(request: any) {
               getLimitedBonuses,
               boostService,
               boostServiceAllBoosts,
+              timerBoostService,
+              allyService,
             })
           ) {
             // handled in module
