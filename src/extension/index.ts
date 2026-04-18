@@ -872,26 +872,6 @@ browser.permissions
 
 // console.debug(showOptions);
 
-/* don't send the origin, so that they don't see the request coming from Chrome extension */
-function originWithId(header: HeaderLike) {
-  const value = header.value ?? '';
-  return (
-    header.name.toLowerCase() === 'origin' &&
-    (value.indexOf('moz-extension://') === 0 ||
-      value.indexOf('chrome-extension://') === 0)
-  );
-}
-
-chrome.webRequest.onBeforeSendHeaders.addListener(
-  (details: any) => {
-    return {
-      requestHeaders: details.requestHeaders.filter((x: HeaderLike) => !originWithId(x)),
-    };
-  },
-  { urls: ['https://*.innogamescdn.com/*'] },
-  ['requestHeaders'],
-);
-
 browser.devtools.network.onRequestFinished.addListener(handleRequestFinished);
 
 // Routes a parsed WebSocket frame through the same handler pipeline as HTTP messages.
