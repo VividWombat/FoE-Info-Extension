@@ -1,5 +1,3 @@
-import browser from 'webextension-polyfill';
-
 type HudPayload = {
   playerName?: string;
   world?: string;
@@ -14,6 +12,10 @@ type HudPayload = {
 };
 
 const OVERLAY_ID = 'foe-info-overlay';
+const SNIFFER_EVENT = '__foeInfoHudUpdate';
+const SNIFFER_SCRIPT_ID = 'foe-info-hud-sniffer';
+const FRAME_FORWARD_EVENT = 'foe-info-hud:frame-update';
+const isTopFrame = window.top === window;
 
 const OVERLAY_STYLE = `
 #foe-info-overlay {
@@ -176,7 +178,8 @@ const ensureOverlay = () => {
     </div>
   `;
 
-  document.body.appendChild(overlay);
+  const mountTarget = document.body || document.documentElement;
+  mountTarget.appendChild(overlay);
 
   const body = overlay.querySelector('#foe-info-body') as HTMLElement;
   const toggleButton = overlay.querySelector('#foe-info-toggle') as HTMLButtonElement;
@@ -224,9 +227,251 @@ const updateOverlay = (payload: HudPayload) => {
   setText('foe-info-player', playerLine);
 };
 
+const mergePayload = (
+  current: HudPayload,
+  incoming: HudPayload,
+): HudPayload => {
+  return {
+    ...current,
+    ...incoming,
+    fpTotal:
+      typeof incoming.fpTotal === 'number' ? incoming.fpTotal : current.fpTotal,
+  };
+};
+
+const installInPageSniffer = () => {
+  if (document.getElementById(SNIFFER_SCRIPT_ID)) {
+    return;
+  }
+
+  const injected = document.createElement('script');
+  injected.id = SNIFFER_SCRIPT_ID;
+  injected.textContent = `
+(() => {
+  if (window.__foeInfoHudSnifferInstalled) return;
+  window.__foeInfoHudSnifferInstalled = true;
+
+  const EVENT_NAME = '${SNIFFER_EVENT}';
+  const state = {
+    coins: null,
+    supplies: null,
+    fp: null,
+    fpTotal: null,
+    diamonds: null,
+    medals: null,
+    population: null,
+    playerName: null,
+    era: null,
+  };
+
+  const emit = (patch) => {
+    if (!patch || typeof patch !== 'object') return;
+    Object.assign(state, patch);
+    window.dispatchEvent(new CustomEvent(EVENT_NAME, { detail: { ...state } }));
+  };
+
+  const num = (value) => {
+    if (value == null) return null;
+    const asNumber = Number(value);
+    return Number.isNaN(asNumber) ? null : asNumber;
+  };
+
+  const pick = (obj, keys) => {
+    if (!obj || typeof obj !== 'object') return null;
+    for (const key of keys) {
+      const value = num(obj[key]);
+      if (value != null) return value;
+
+      const camel = key.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
+      const camelValue = num(obj[camel]);
+      if (camelValue != null) return camelValue;
+    }
+    return null;
+  };
+
+  const collectPatch = (payload, out, depth = 0) => {
+    if (!payload || typeof payload !== 'object' || depth > 8) return;
+
+    if (Array.isArray(payload)) {
+      for (const item of payload) {
+        collectPatch(item, out, depth + 1);
+      }
+      return;
+    }
+
+    const coins = pick(payload, ['money', 'coins', 'coin']);
+    const supplies = pick(payload, ['supplies', 'supply']);
+    const diamonds = pick(payload, ['premium', 'diamonds', 'diamond']);
+    const medals = pick(payload, ['medals', 'medal']);
+    const population = pick(payload, ['population', 'citizens', 'pop']);
+
+    if (coins != null) out.coins = coins;
+    if (supplies != null) out.supplies = supplies;
+    if (diamonds != null) out.diamonds = diamonds;
+    if (medals != null) out.medals = medals;
+    if (population != null) out.population = population;
+
+    const fpCurrent = pick(payload, ['forge_points', 'forgePoints', 'amount', 'current', 'fp']);
+    const fpMax = pick(payload, ['strategy_points', 'max', 'maximum', 'fpMax', 'max_amount']);
+    if (fpCurrent != null) out.fp = fpCurrent;
+    if (fpCurrent != null && fpMax != null) out.fpTotal = fpCurrent + fpMax;
+    else if (fpCurrent != null) out.fpTotal = fpCurrent;
+
+    if (typeof payload.player_name === 'string') out.playerName = payload.player_name;
+    if (typeof payload.name === 'string' && !out.playerName) out.playerName = payload.name;
+    if (typeof payload.world === 'string') out.world = payload.world;
+    if (typeof payload.era === 'string') out.era = payload.era;
+
+    for (const key of Object.keys(payload)) {
+      const value = payload[key];
+      if (value && typeof value === 'object') {
+        collectPatch(value, out, depth + 1);
+      }
+    }
+  };
+
+  const parseBody = (requestUrl, responseText) => {
+    if (!requestUrl || !requestUrl.includes('forgeofempires.com')) return;
+    if (!responseText || typeof responseText !== 'string') return;
+
+    let parsed;
+    try {
+      parsed = JSON.parse(responseText);
+    } catch (_error) {
+      return;
+    }
+
+    const messages = Array.isArray(parsed) ? parsed : [parsed];
+    const patch = {};
+
+    for (const message of messages) {
+      if (!message || typeof message !== 'object') continue;
+      const responseData =
+        message.responseData ?? message.data ?? message.result ?? message;
+      collectPatch(responseData, patch, 0);
+
+      // Also scan message envelope because some values are present outside responseData.
+      collectPatch(message, patch, 0);
+    }
+
+    if (Object.keys(patch).length > 0) {
+      emit(patch);
+    }
+  };
+
+  const scanRuntime = () => {
+    const patch = {};
+    try {
+      const candidates = [window.forge, window.game, window.FoE, window.client].filter(Boolean);
+      for (const root of candidates) {
+        collectPatch(root, patch, 0);
+      }
+    } catch (_error) {
+      // ignore scan errors
+    }
+
+    if (Object.keys(patch).length > 0) {
+      emit(patch);
+    }
+  };
+
+  const originalOpen = XMLHttpRequest.prototype.open;
+  const originalSend = XMLHttpRequest.prototype.send;
+
+  XMLHttpRequest.prototype.open = function(method, requestUrl) {
+    this.__foeInfoUrl = typeof requestUrl === 'string' ? requestUrl : '';
+    return originalOpen.apply(this, arguments);
+  };
+
+  XMLHttpRequest.prototype.send = function() {
+    this.addEventListener('load', () => {
+      try {
+        if (this.status >= 200 && this.status < 300) {
+          parseBody(this.__foeInfoUrl || '', this.responseText || '');
+        }
+      } catch (_error) {
+        // ignore parsing errors
+      }
+    });
+    return originalSend.apply(this, arguments);
+  };
+
+  const originalFetch = window.fetch;
+  window.fetch = function(input, init) {
+    const requestUrl =
+      typeof input === 'string' ? input : (input && input.url) || '';
+    return originalFetch.call(window, input, init).then((response) => {
+      try {
+        response
+          .clone()
+          .text()
+          .then((text) => parseBody(requestUrl, text))
+          .catch(() => undefined);
+      } catch (_error) {
+        // ignore parsing errors
+      }
+      return response;
+    });
+  };
+
+  setTimeout(scanRuntime, 3000);
+  setInterval(scanRuntime, 10000);
+})();
+`;
+
+  const mountPoint = document.head || document.documentElement || document.body;
+  mountPoint?.appendChild(injected);
+};
+
+const snifferState: HudPayload = {};
+
+const onSnifferUpdate = (event: Event) => {
+  const detail = (event as CustomEvent<HudPayload>).detail;
+  if (!detail || typeof detail !== 'object') {
+    return;
+  }
+
+  Object.assign(snifferState, mergePayload(snifferState, detail));
+  updateOverlay(snifferState);
+
+  try {
+    window.top?.postMessage(
+      {
+        type: FRAME_FORWARD_EVENT,
+        payload: detail,
+      },
+      '*',
+    );
+  } catch (_error) {
+    // Ignore cross-frame delivery issues.
+  }
+};
+
+const onFrameForward = (event: MessageEvent) => {
+  if (!isTopFrame) {
+    return;
+  }
+
+  const data = event.data;
+  if (!data || data.type !== FRAME_FORWARD_EVENT || !data.payload) {
+    return;
+  }
+
+  Object.assign(
+    snifferState,
+    mergePayload(snifferState, data.payload as HudPayload),
+  );
+  updateOverlay(snifferState);
+};
+
 const init = () => {
   ensureOverlay();
+  window.addEventListener(SNIFFER_EVENT, onSnifferUpdate);
+  window.addEventListener('message', onFrameForward);
 };
+
+// Install network hooks as early as possible, similar to Forge Companion.
+installInPageSniffer();
 
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', init);
@@ -234,8 +479,18 @@ if (document.readyState === 'loading') {
   init();
 }
 
-browser.runtime.onMessage.addListener((message: any) => {
-  if (message?.type === 'foe-info-hud:update') {
-    updateOverlay((message.payload || {}) as HudPayload);
-  }
-});
+if (
+  typeof chrome !== 'undefined' &&
+  chrome.runtime &&
+  chrome.runtime.onMessage
+) {
+  chrome.runtime.onMessage.addListener((message: any) => {
+    if (message?.type === 'foe-info-hud:update') {
+      Object.assign(
+        snifferState,
+        mergePayload(snifferState, (message.payload || {}) as HudPayload),
+      );
+      updateOverlay(snifferState);
+    }
+  });
+}

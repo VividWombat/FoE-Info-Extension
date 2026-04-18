@@ -246,13 +246,26 @@ const publishHudData = () => {
     if (typeof tabId !== 'number') {
       return;
     }
+
     browser.tabs
-      .sendMessage(tabId, {
-        type: 'foe-info-hud:update',
-        payload: buildHudPayload(),
+      .get(tabId)
+      .then((tab) => {
+        const tabUrl = tab?.url || '';
+        if (!/forgeofempires\.com\/game\//i.test(tabUrl)) {
+          return;
+        }
+
+        return browser.tabs
+          .sendMessage(tabId, {
+            type: 'foe-info-hud:update',
+            payload: buildHudPayload(),
+          })
+          .catch(() => {
+            // Content script may be unavailable during reload/navigation.
+          });
       })
       .catch(() => {
-        // Content script may not be injected yet; this is expected on non-game pages.
+        // Tab may be unavailable while devtools target is reloading.
       });
   } catch (error) {
     console.debug('HUD publish skipped', error);
@@ -288,6 +301,7 @@ const scheduleHudUpdate = () => {
 export var darkMode = browser.devtools.panels.themeName;
 const panelParams = new URLSearchParams(window.location.search);
 export var uiMode: 'classic' | 'traditional' = 'classic';
+let uiModeBadge: HTMLElement | null = null;
 
 const applyUiMode = (mode: unknown) => {
   const normalizedMode = mode === 'traditional' ? 'traditional' : 'classic';
@@ -295,6 +309,9 @@ const applyUiMode = (mode: unknown) => {
   document.body.setAttribute('data-ui-mode', uiMode);
   document.body.classList.remove('ui-mode-classic', 'ui-mode-traditional');
   document.body.classList.add(`ui-mode-${uiMode}`);
+  if (uiModeBadge) {
+    uiModeBadge.textContent = uiMode === 'traditional' ? 'Traditional' : 'Classic';
+  }
 };
 
 const applyTheme = (themeName: unknown) => {
@@ -360,6 +377,10 @@ titleHeading.className = 'title';
 // child.innerHTML = pkg.name;
 titleHeading.textContent = EXT_NAME;
 newelement.appendChild(titleHeading);
+uiModeBadge = document.createElement('span');
+uiModeBadge.className = 'ui-mode-badge';
+uiModeBadge.textContent = uiMode === 'traditional' ? 'Traditional' : 'Classic';
+newelement.appendChild(uiModeBadge);
 newelement = document.createElement('div');
 newelement.innerHTML = `<span class="material-icons-outlined md-18 options-icon">settings</span>`;
 newelement.classList.toggle('p-2');
@@ -551,6 +572,49 @@ const safeJsonParse = (text: unknown, context: string): unknown => {
     return JSON.parse(text);
   } catch (error) {
     console.warn(`Failed to parse JSON (${context})`, error);
+    return null;
+  }
+};
+
+const isRecord = (value: unknown): value is GenericRecord => {
+  return !!value && typeof value === 'object' && !Array.isArray(value);
+};
+
+const toRecordArray = (value: unknown): GenericRecord[] => {
+  if (Array.isArray(value)) {
+    return value.filter(isRecord);
+  }
+  if (isRecord(value)) {
+    return [value];
+  }
+  return [];
+};
+
+const parseMetadataPayload = async (
+  metadataUrl: string,
+): Promise<GenericRecord[] | null> => {
+  if (!metadataUrl || typeof metadataUrl !== 'string') {
+    return null;
+  }
+
+  try {
+    const response = await fetch(metadataUrl);
+    const body = await response.text();
+    const contentType = response.headers.get('content-type') || '';
+    const bodyStart = body.trim().slice(0, 1);
+    const looksLikeJson =
+      /json|javascript/i.test(contentType) ||
+      bodyStart === '{' ||
+      bodyStart === '[';
+
+    if (!looksLikeJson) {
+      console.debug('Skipping non-JSON metadata', metadataUrl, contentType);
+      return null;
+    }
+
+    return toRecordArray(safeJsonParse(body, `metadata ${metadataUrl}`));
+  } catch (error) {
+    console.error('Failed loading metadata', metadataUrl, error);
     return null;
   }
 };
@@ -875,38 +939,44 @@ function handleRequestFinished(request: any) {
     request.getContent().then(async ([body, mimeType]: [string, string]) => {
       // console.log("Content: ", body);
       // console.log("MIME type: ", mimeType);
-      const parsed = safeJsonParse(body, 'network response body') as
-        | GenericRecord[]
-        | null;
-      if (!parsed) {
+      const parsed = safeJsonParse(body, 'network response body');
+      if (parsed == null) {
         return;
       }
+      const parsedMessages = toRecordArray(parsed);
       // console.debug('parsed:', parsed);
-      if (parsed.length) {
-        for (var i = 0; i < parsed.length; i++) {
-          const msg = parsed[i];
+      if (parsedMessages.length) {
+        for (var i = 0; i < parsedMessages.length; i++) {
+          const msg = parsedMessages[i];
+          const requestClass =
+            typeof msg.requestClass === 'string' ? msg.requestClass : '';
+          const requestMethod =
+            typeof msg.requestMethod === 'string' ? msg.requestMethod : '';
 
           console.debug('msg', msg);
 
           // check if this is static data service info that holds all URLs to all metadata files
           if (
-            msg.requestClass === 'StaticDataService' &&
-            msg.requestMethod == 'getMetadata'
+            requestClass === 'StaticDataService' &&
+            requestMethod == 'getMetadata'
           ) {
+            const metadataItems = Array.isArray(msg.responseData)
+              ? msg.responseData
+              : [];
+
+            if (!metadataItems.length) {
+              continue;
+            }
+
             try {
-              const requests = msg.responseData.map((item: any) =>
-                fetch(item.url)
-                  .then((r) => r.json())
-                  .catch((err) => {
-                    console.error('Failed loading metadata', item.url, err);
-                    return null;
-                  }),
+              const requests = metadataItems.map((item: any) =>
+                parseMetadataPayload(item?.url),
               );
               const results = await Promise.all(requests);
 
               results.forEach((data: any, idx: number) => {
-                if (!data) return;
-                const identifier = msg.responseData[idx].identifier;
+                if (!data || !Array.isArray(data)) return;
+                const identifier = metadataItems[idx]?.identifier;
                 if (identifier === 'city_entities') {
                   data.forEach(function (msg: any) {
                     if (
@@ -942,10 +1012,12 @@ function handleRequestFinished(request: any) {
               metadataLoaded = true;
             } catch (err) {
               console.error('Metadata fetch failed', err);
-              for (const item of msg.responseData) {
+              for (const item of metadataItems) {
                 try {
-                  const resp = await fetch(item.url);
-                  const data = await resp.json();
+                  const data = await parseMetadataPayload(item?.url);
+                  if (!data) {
+                    continue;
+                  }
                   data.forEach(processMetadataEntry);
                 } catch (e) {
                   console.error('metadata fetch failed', item, e);
@@ -959,8 +1031,8 @@ function handleRequestFinished(request: any) {
               }
             }
           } else if (
-            msg.requestClass == 'CampaignService' &&
-            msg.requestMethod == 'getDeposits'
+            requestClass == 'CampaignService' &&
+            requestMethod == 'getDeposits'
           ) {
             /*CampaignService*/
           } else if (
@@ -1239,8 +1311,8 @@ function handleRequestFinished(request: any) {
         }
       } else {
         // console.debug('parsed:', parsed);
-        if (parsed && parsed.player_name && parsed.worlds) {
-          worlds = parsed.worlds;
+        if (isRecord(parsed) && parsed.player_name && parsed.worlds) {
+          worlds = parsed.worlds as any;
           console.debug('worlds', worlds);
         }
       }

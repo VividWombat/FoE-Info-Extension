@@ -21,12 +21,58 @@ import {
   incidents,
   url,
 } from '../index';
-const _url = url as unknown as Record<string, string>;
-const _CityEntityDefs = CityEntityDefs as unknown as Record<
-  string,
-  { name: string }
->;
-const _Goods = Goods as unknown as Record<string, unknown>;
+const createLiveProxy = <T extends Record<string, unknown>>(
+  getSource: () => T | undefined,
+): T => {
+  return new Proxy({} as T, {
+    get: (_target, key) => {
+      const source = getSource();
+      return source ? source[key as keyof T] : undefined;
+    },
+    set: (_target, key, value) => {
+      const source = getSource();
+      if (!source) {
+        return false;
+      }
+      source[key as keyof T] = value as T[keyof T];
+      return true;
+    },
+    has: (_target, key) => {
+      const source = getSource();
+      return !!source && key in source;
+    },
+    ownKeys: () => {
+      const source = getSource();
+      return source ? Reflect.ownKeys(source) : [];
+    },
+    getOwnPropertyDescriptor: (_target, key) => {
+      const source = getSource();
+      if (!source) {
+        return undefined;
+      }
+      const descriptor = Object.getOwnPropertyDescriptor(source, key);
+      if (descriptor) {
+        return descriptor;
+      }
+      return {
+        configurable: true,
+        enumerable: true,
+        writable: true,
+        value: (source as Record<string | symbol, unknown>)[key as string | symbol],
+      };
+    },
+  });
+};
+
+const _url = createLiveProxy<Record<string, string>>(
+  () => url as unknown as Record<string, string>,
+);
+const _CityEntityDefs = createLiveProxy<Record<string, { name: string }>>(
+  () => CityEntityDefs as unknown as Record<string, { name: string }>,
+);
+const _Goods = createLiveProxy<Record<string, unknown>>(
+  () => Goods as unknown as Record<string, unknown>,
+);
 import {
   BattlegroundPerformance,
   BGtime,
@@ -37,7 +83,9 @@ const _BattlegroundPerformance = BattlegroundPerformance as unknown as Array<
 >;
 const _GuildMembers = GuildMembers as unknown as Array<Record<string, unknown>>;
 import { ResourceNames } from '../services/ResourceService';
-const _ResourceNames = ResourceNames as unknown as Record<string, string>;
+const _ResourceNames = createLiveProxy<Record<string, string>>(
+  () => ResourceNames as unknown as Record<string, string>,
+);
 import { showOptions } from '../state/showOptions';
 import * as collapse from './collapse';
 import { fCollapseIncidents } from './collapse';
@@ -195,8 +243,14 @@ export function fGBsname(city_entity: string) {
 }
 
 export function fEntityNameTrim(name: string) {
-  if (!_CityEntityDefs[name]) return name;
-  var trimName = _CityEntityDefs[name].name;
+  const entityDef = _CityEntityDefs[name];
+  const trimName =
+    entityDef && typeof entityDef.name === 'string' ? entityDef.name : name;
+
+  if (!trimName || typeof trimName !== 'string') {
+    return name;
+  }
+
   if (trimName.includes(' - Lv.'))
     return trimName.substring(0, trimName.indexOf(' - Lv.'));
   else if (trimName.includes('Lv. 2 - '))
@@ -213,7 +267,7 @@ export function fGBname(city_entity: string) {
   // 	console.debug(CityEntityDefs[city_entity]);
 
   // return GBdefs[city_entity];
-  if (_CityEntityDefs[city_entity]) {
+  if (_CityEntityDefs[city_entity]?.name) {
     // console.debug(CityEntityDefs[city_entity].name,CityEntityDefs);
     return _CityEntityDefs[city_entity].name;
   }
