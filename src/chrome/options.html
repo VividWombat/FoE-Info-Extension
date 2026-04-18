@@ -241,8 +241,11 @@
               id="sheetGuildURL"
               value=""
               size="40"
-              pattern="https?://.+"
+              placeholder="https://script.google.com/macros/s/.../exec"
+              pattern="https://script\.google\.com/macros/s/.+/exec.*"
+              title="Must be a Google Apps Script Web App URL: https://script.google.com/macros/s/.../exec"
             />
+            <small id="sheetGuildURL-hint" class="form-text text-muted" style="display:none;color:#c0392b"></small>
           </label>
           <label>
             Forge Companion Import URL - GBG

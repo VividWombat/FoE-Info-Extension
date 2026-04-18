@@ -125,8 +125,8 @@ Status:
 
 - Stage 1 completed (legacy discordapp permission removed).
 - Stage 2a completed: `*.googleusercontent.com` removed — confirmed unused in source.
-- Stage 2b pending decision: `*.google.com/*` can be narrowed to `script.google.com/macros/s/*`
-  only after options validation enforces Apps Script URL format (see PERMISSIONS_AUDIT.md).
+- Stage 2b completed: `*.google.com/*` narrowed to `script.google.com/macros/s/*`;
+  options page now validates URL format before saving.
 - Stage 3 closed (no change): `webRequest` is actively required for CDN header stripping
   at index.ts; permission retained.
 
@@ -145,8 +145,51 @@ Status:
 
 - Completed validation sweep (typecheck/tests/build path).
 
+## Phase 8: Design Preview System (Planned)
+
+Goals:
+
+- Surface the Chronicler design system mockups as an opt-in "Preview" mode alongside the
+  existing classic/traditional UI, so users can test and compare without losing the original.
+- Restyle the Options page to use the Chronicler design tokens.
+
+Scope:
+
+- `src/css/custom.scss` — convert Tailwind-CDN mockup styles to SCSS tokens (no CDN dependency).
+- `src/chrome/options.html` + `src/css/options.scss` — Options page redesign.
+- `src/chrome/panel.html` + `src/extension/index.ts` — conditional rendering flag (`designPreview`).
+- New SCSS partials per panel view (empire dashboard, GB tracker, guild expedition hub, trade goods).
+- Options settings: add `designPreview` boolean flag persisted to storage.
+
+Approach:
+
+- Option B: separate `designPreview` toggle in Options (not a third `uiMode` value).
+- New panel layouts render when flag is enabled; original layouts are the default.
+- No Tailwind CDN — styles are ported to the existing SCSS token system.
+
+Deliverables:
+
+- Options page redesign commit.
+- Per-panel preview layout commits (one per view for easy rollback).
+- Integration test: both layout modes load without JS errors.
+
+Status: Planned.
+
+## Phase 9: Service Expansion (Planned)
+
+Goals:
+
+- Wire up game services identified from HAR analysis that are not currently captured.
+- Implement WebSocket/WebStream listener if a streaming endpoint is confirmed.
+
+Scope:
+
+- New or expanded handlers in `src/extension/index.ts`.
+- New service modules under `src/extension/services/` as needed.
+
+Status: Pending HAR analysis results.
+
 ## Current Position
 
-- Completed: Phases 1-5 and 7.
-- In progress: Phase 6 (permissions hardening Stage 2/3 pending).
-- Next active focus: Stage 2 permission narrowing decision.
+- Completed: Phases 1-7. Phase 6 fully closed.
+- Next: Phase 8 (design preview + options redesign), then Phase 9 (service expansion).

@@ -112,9 +112,23 @@ function save_options() {
   url.discordTargetURL = document.getElementById('discordTargetURL').value;
 
   // Google Sheets
-  url.sheetGuildURL = document.getElementById('sheetGuildURL').value;
+  const rawSheetURL: string = (document.getElementById('sheetGuildURL') as HTMLInputElement).value.trim();
+  const hintEl = document.getElementById('sheetGuildURL-hint') as HTMLElement | null;
+  const APPS_SCRIPT_RE = /^https:\/\/script\.google\.com\/macros\/s\/.+\/exec/;
+  if (rawSheetURL && !APPS_SCRIPT_RE.test(rawSheetURL)) {
+    if (hintEl) {
+      hintEl.textContent = 'URL must be a Google Apps Script Web App URL (https://script.google.com/macros/s/.../exec)';
+      hintEl.style.display = 'block';
+    }
+    return;
+  }
+  if (hintEl) {
+    hintEl.textContent = '';
+    hintEl.style.display = 'none';
+  }
+  url.sheetGuildURL = rawSheetURL;
   // Forge Companion
-  url.forgeCompanionURL = document.getElementById('forgeCompanionURL').value;
+  url.forgeCompanionURL = (document.getElementById('forgeCompanionURL') as HTMLInputElement).value;
   // url.sheetCityURL = document.getElementById('sheetCityURL').value;
   // url.sheetGameURL = document.getElementById('sheetGameURL').value;
 

@@ -10,7 +10,7 @@ This document tracks current permissions and proposes staged, reversible changes
   - src/chrome/manifest_firefox.json
 - Current build target: Chrome first.
 
-## Current Baseline (After Stage 2a)
+## Current Baseline (After Stage 2b)
 
 ### permissions
 
@@ -23,7 +23,7 @@ This document tracks current permissions and proposes staged, reversible changes
 ### host_permissions
 
 - https://*.forgeofempires.com/game/*
-- https://*.google.com/*
+- https://script.google.com/macros/s/*
 - https://discord.com/api/webhooks/*
 - https://*.innogamescdn.com/*
 
@@ -57,20 +57,21 @@ Stage 1 is complete. Use the remaining sequence for future milestones.
 - Rollback:
   - Re-add `"https://*.googleusercontent.com/"` to `host_permissions` in all three source manifests.
 
-### Stage 2b: Narrow *.google.com/* (Decision Required)
+### Stage 2b: Narrow *.google.com/* → script.google.com/macros/s/* (Completed)
 
-- Candidate to narrow:
+- Narrowed:
   - `host_permissions`: `https://*.google.com/*` → `https://script.google.com/macros/s/*`
 - Reason:
-  - The only Google endpoint used is the user-configured Apps Script webhook URL.
-  - All examples and code paths use `script.google.com/macros/s/*/exec`.
-- Blocker:
-  - `sheetGuildURL` and `sheetGameURL` are free-form user inputs stored in options.
-  - If any user has configured a non-Apps-Script URL (e.g. `docs.google.com`, custom domain),
-    narrowing the pattern would silently break their sheet integration.
-  - Decision needed: enforce Apps Script URL format in options validation, then narrow.
+  - The only Google endpoint is the user-configured Apps Script webhook URL.
+  - All code paths use `script.google.com/macros/s/*/exec` exclusively.
+- Validation performed:
+  - Added `APPS_SCRIPT_RE` validation in `options.ts` `save_options()` — rejects and warns
+    if the entered URL does not match `https://script.google.com/macros/s/*/exec`.
+  - Updated `pattern` attribute in `options.html` to enforce the same format in-browser.
+  - No other Google host endpoints exist in source.
 - Rollback:
-  - Revert to `https://*.google.com/*` in all source manifests.
+  - Revert manifest change to `https://*.google.com/*` in all source manifests.
+  - Remove the `APPS_SCRIPT_RE` guard and `pattern` attribute change in options.
 
 ### Stage 3: webRequest permission — Confirmed Required (Closed)
 
