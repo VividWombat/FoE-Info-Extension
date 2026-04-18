@@ -91,7 +91,7 @@ import {
   handleBlueprintServiceRequest,
   handleRewardServiceRequest,
 } from './services/RewardAndBlueprintRequestHandler';
-import { handleWorldChallengeRequest } from './services/WorldChallengeRequestHandler';
+import { handleWorldChallengeRequest, hudWcState } from './services/WorldChallengeRequestHandler';
 import { connectWebSocket, disconnectWebSocket } from './services/WebSocketService';
 import setOptions, { showOptions } from './state/showOptions';
 import '../css/main.scss';
@@ -209,7 +209,10 @@ var tool = browser.runtime.getManifest();
 console.debug(tool.name);
 console.debug(tool.version);
 
+type HudGoodsEntry = { k: string; v: number };
+
 type HudPayload = {
+  // Resources (sniffer + DevTools)
   playerName?: string;
   world?: string;
   era?: string;
@@ -220,26 +223,75 @@ type HudPayload = {
   diamonds?: number | null;
   medals?: number | null;
   population?: number | null;
+  // City combat stats (DevTools only)
+  atkBonus?: number;
+  defBonus?: number;
+  arcBonus?: number;
+  guildName?: string;
+  // Limited bonuses (DevTools only)
+  bonusSpoils?: number;
+  bonusDiplomatic?: number;
+  bonusStrike?: number;
+  bonusAid?: number;
+  // Active great building (DevTools only)
+  gbName?: string;
+  gbLevel?: number;
+  gbCurrent?: number;
+  gbTotal?: number;
+  // World Challenge (DevTools WS)
+  wcLevel?: number;
+  wcPoints?: number;
+  wcThreshold?: number;
+  // Top goods by quantity (DevTools only)
+  goods?: HudGoodsEntry[];
 };
 
 let hudUpdateTimer: ReturnType<typeof setTimeout> | null = null;
 
 const buildHudPayload = (): HudPayload => {
   const rss = (Resources ?? {}) as Record<string, unknown>;
-  const asNumber = (value: unknown): number | null =>
+  const asNum = (value: unknown): number | null =>
     typeof value === 'number' && Number.isFinite(value) ? value : null;
 
+  const topGoods: HudGoodsEntry[] = Object.entries(Goods)
+    .filter(([, v]) => (v as number) > 0)
+    .sort(([, a], [, b]) => (b as number) - (a as number))
+    .slice(0, 6)
+    .map(([k, v]) => ({ k, v: v as number }));
+
   return {
+    // Resources
     playerName: MyInfo?.name || undefined,
     world: GameOrigin || undefined,
     era: MyInfo?.era || undefined,
-    coins: asNumber(rss.money),
-    supplies: asNumber(rss.supplies),
-    fp: asNumber(availableFP),
-    fpTotal: asNumber(availableFP + availablePacksFP),
-    diamonds: asNumber(rss.premium),
-    medals: asNumber(rss.medals),
-    population: asNumber(rss.population),
+    coins: asNum(rss.money),
+    supplies: asNum(rss.supplies),
+    fp: asNum(availableFP),
+    fpTotal: asNum(availableFP + availablePacksFP),
+    diamonds: asNum(rss.premium),
+    medals: asNum(rss.medals),
+    population: asNum(rss.population),
+    // City
+    atkBonus: City.Attack || undefined,
+    defBonus: City.Defense || undefined,
+    arcBonus: City.ArcBonus || undefined,
+    guildName: MyInfo?.guild || undefined,
+    // Limited bonuses
+    bonusSpoils: Bonus.spoils,
+    bonusDiplomatic: Bonus.diplomatic,
+    bonusStrike: Bonus.strike,
+    bonusAid: Bonus.aid,
+    // Active GB
+    gbName: GBselected.name || undefined,
+    gbLevel: GBselected.name ? GBselected.level : undefined,
+    gbCurrent: GBselected.name ? GBselected.current : undefined,
+    gbTotal: GBselected.name ? GBselected.total : undefined,
+    // World Challenge
+    wcLevel: hudWcState?.level,
+    wcPoints: hudWcState?.points,
+    wcThreshold: hudWcState?.threshold,
+    // Goods
+    goods: topGoods.length ? topGoods : undefined,
   };
 };
 

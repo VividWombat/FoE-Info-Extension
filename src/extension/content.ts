@@ -1,3 +1,5 @@
+type HudGoodsEntry = { k: string; v: number };
+
 type HudPayload = {
   playerName?: string;
   world?: string;
@@ -9,6 +11,22 @@ type HudPayload = {
   diamonds?: number | null;
   medals?: number | null;
   population?: number | null;
+  atkBonus?: number;
+  defBonus?: number;
+  arcBonus?: number;
+  guildName?: string;
+  bonusSpoils?: number;
+  bonusDiplomatic?: number;
+  bonusStrike?: number;
+  bonusAid?: number;
+  gbName?: string;
+  gbLevel?: number;
+  gbCurrent?: number;
+  gbTotal?: number;
+  wcLevel?: number;
+  wcPoints?: number;
+  wcThreshold?: number;
+  goods?: HudGoodsEntry[];
 };
 
 const OVERLAY_ID = 'foe-info-overlay';
@@ -23,7 +41,7 @@ const OVERLAY_STYLE = `
   top: 84px;
   right: 16px;
   z-index: 2147483640;
-  width: 230px;
+  width: 244px;
   background: linear-gradient(180deg, #191007f2, #0e0a08f5);
   border: 1px solid #4b3518;
   border-top: 2px solid #cf9932;
@@ -31,19 +49,17 @@ const OVERLAY_STYLE = `
   padding: 10px 12px 8px;
   font-family: Georgia, 'Times New Roman', serif;
   color: #ecd9b4;
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.82);
+  box-shadow: 0 8px 28px rgba(0,0,0,0.82);
   user-select: none;
 }
-#foe-info-overlay.hidden {
-  display: none;
-}
+#foe-info-overlay.hidden { display: none; }
 #foe-info-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid rgba(207, 153, 50, 0.25);
-  margin-bottom: 8px;
-  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(207,153,50,0.25);
+  margin-bottom: 6px;
+  padding-bottom: 5px;
   cursor: move;
 }
 #foe-info-title {
@@ -53,13 +69,9 @@ const OVERLAY_STYLE = `
   text-transform: uppercase;
   color: #f0bd55;
 }
-#foe-info-btns {
-  display: flex;
-  gap: 4px;
-}
+#foe-info-btns { display: flex; gap: 4px; }
 .foe-info-btn {
-  width: 22px;
-  height: 22px;
+  width: 22px; height: 22px;
   border-radius: 4px;
   border: 1px solid #5f4522;
   background: #1e160c;
@@ -67,45 +79,82 @@ const OVERLAY_STYLE = `
   font-weight: 700;
   cursor: pointer;
 }
-.foe-info-btn:hover {
-  border-color: #f0bd55;
-  color: #ffe2a5;
-}
+.foe-info-btn:hover { border-color: #f0bd55; color: #ffe2a5; }
 #foe-info-body {
-  display: block;
+  max-height: 460px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #4b3518 transparent;
 }
+.foe-info-section { border-bottom: 1px solid rgba(207,153,50,0.1); }
+.foe-info-section:last-of-type { border-bottom: none; }
+.foe-info-sec-hdr {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 0 3px;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #cf9932;
+}
+.foe-info-sec-hdr:hover { color: #f0bd55; }
+.foe-info-sec-hdr::after { content: '▾'; font-size: 9px; opacity: 0.7; }
+.foe-info-sec-hdr.collapsed::after { content: '▸'; }
+.foe-info-sec-body { padding-bottom: 3px; }
+.foe-info-sec-body.collapsed { display: none; }
 .foe-info-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 3px 0;
-  border-bottom: 1px solid rgba(207, 153, 50, 0.14);
+  padding: 2px 0;
+  border-bottom: 1px solid rgba(207,153,50,0.1);
 }
-.foe-info-row:last-child {
-  border-bottom: none;
+.foe-info-row:last-child { border-bottom: none; }
+.foe-info-label { color: #9d8b6c; font-size: 11px; }
+.foe-info-value { color: #f8dfab; font-size: 11px; font-weight: 700; }
+.foe-info-muted { color: #9d8b6c; font-size: 10px; }
+.foe-info-bar {
+  height: 3px;
+  background: rgba(207,153,50,0.15);
+  border-radius: 2px;
+  margin: 4px 0 2px;
+  overflow: hidden;
 }
-.foe-info-label {
-  color: #9d8b6c;
-  font-size: 12px;
-}
-.foe-info-value {
-  color: #f8dfab;
-  font-size: 12px;
-  font-weight: 700;
+.foe-info-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #6b8a4e, #cf9932);
+  transition: width 0.4s ease;
 }
 #foe-info-player {
-  margin-top: 7px;
-  padding-top: 6px;
-  border-top: 1px solid rgba(207, 153, 50, 0.2);
-  font-size: 11px;
-  color: #d4c7ab;
+  padding: 5px 0 2px;
+  border-top: 1px solid rgba(207,153,50,0.18);
+  margin-top: 4px;
+  font-size: 10px;
+  color: #9d8b6c;
 }
 `;
 
+const GOODS_LABELS: Record<string, string> = {
+  noage: 'Stone Age', ba: 'Bronze Age', ia: 'Iron Age',
+  ema: 'Early Middle Ages', hma: 'High Middle Ages', lma: 'Late Middle Ages',
+  cma: 'Colonial Age', ina: 'Industrial Age', pe: 'Progressive Era',
+  me: 'Modern Era', pme: 'Postmodern Era', ce: 'Contemporary Era',
+  te: 'Tomorrow', fe: 'Future', af: 'Arctic Future',
+  of: 'Oceanic Future', vf: 'Virtual Future',
+  sam: 'SA Mars', saab: 'SA Asteroid Belt', sav: 'SA Venus',
+  sajm: 'SA Jovian Moon', sat: 'SA Titan', sash: 'SA Saturn Hub',
+};
+
 const fmt = (value: unknown): string => {
   if (typeof value !== 'number' || Number.isNaN(value)) return '-';
-  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
-  if (value >= 1_000) return `${(value / 1_000).toFixed(1)}K`;
+  const abs = Math.abs(value);
+  const sign = value < 0 ? '-' : '';
+  if (abs >= 1_000_000) return `${sign}${(abs / 1_000_000).toFixed(1)}M`;
+  if (abs >= 1_000) return `${sign}${(abs / 1_000).toFixed(1)}K`;
   return value.toLocaleString();
 };
 
@@ -149,94 +198,187 @@ const makeDraggable = (overlay: HTMLElement, dragHandle: HTMLElement) => {
   });
 };
 
-const ensureOverlay = () => {
+const section = (id: string, title: string, bodyHtml: string, collapsed = false) => `
+  <div class="foe-info-section" id="fi-wrap-${id}">
+    <div class="foe-info-sec-hdr${collapsed ? ' collapsed' : ''}" data-sec="${id}">${title}</div>
+    <div class="foe-info-sec-body${collapsed ? ' collapsed' : ''}" id="fi-body-${id}">${bodyHtml}</div>
+  </div>`;
+
+const row = (label: string, valueId: string) =>
+  `<div class="foe-info-row"><span class="foe-info-label">${label}</span><span class="foe-info-value" id="${valueId}">-</span></div>`;
+
+const barHtml = (fillId: string, captionId: string) =>
+  `<div class="foe-info-bar"><div class="foe-info-bar-fill" id="${fillId}" style="width:0%"></div></div>
+   <div class="foe-info-row"><span class="foe-info-muted" id="${captionId}">-</span></div>`;
+
+const ensureOverlay = (): HTMLElement => {
   let overlay = document.getElementById(OVERLAY_ID) as HTMLElement | null;
   if (overlay) return overlay;
 
   ensureStyle();
-
   overlay = document.createElement('div');
   overlay.id = OVERLAY_ID;
   overlay.innerHTML = `
     <div id="foe-info-header">
-      <span id="foe-info-title">FoE Info HUD</span>
+      <span id="foe-info-title">FoE Info</span>
       <div id="foe-info-btns">
-        <button class="foe-info-btn" id="foe-info-toggle" title="Minimize">-</button>
-        <button class="foe-info-btn" id="foe-info-hide" title="Hide">x</button>
+        <button class="foe-info-btn" id="fi-toggle" title="Minimize">\u2212</button>
+        <button class="foe-info-btn" id="fi-hide" title="Hide">\u00d7</button>
       </div>
     </div>
     <div id="foe-info-body">
-      <div class="foe-info-row"><span class="foe-info-label">Coins</span><span class="foe-info-value" id="foe-info-coins">-</span></div>
-      <div class="foe-info-row"><span class="foe-info-label">Supplies</span><span class="foe-info-value" id="foe-info-supplies">-</span></div>
-      <div class="foe-info-row"><span class="foe-info-label">FP</span><span class="foe-info-value" id="foe-info-fp">-</span></div>
-      <div class="foe-info-row"><span class="foe-info-label">Diamonds</span><span class="foe-info-value" id="foe-info-diamonds">-</span></div>
-      <div class="foe-info-row"><span class="foe-info-label">Medals</span><span class="foe-info-value" id="foe-info-medals">-</span></div>
-      <div class="foe-info-row"><span class="foe-info-label">Population</span><span class="foe-info-value" id="foe-info-population">-</span></div>
-      <div class="foe-info-row"><span class="foe-info-label">World</span><span class="foe-info-value" id="foe-info-world">-</span></div>
-      <div class="foe-info-row"><span class="foe-info-label">Era</span><span class="foe-info-value" id="foe-info-era">-</span></div>
-      <div id="foe-info-player">Waiting for FoE Info data...</div>
-    </div>
-  `;
+      ${section('res', 'Resources',
+        row('Coins', 'fi-coins') +
+        row('Supplies', 'fi-supplies') +
+        row('FP', 'fi-fp') +
+        row('Diamonds', 'fi-diamonds') +
+        row('Medals', 'fi-medals') +
+        row('Population', 'fi-pop')
+      )}
+      ${section('city', 'City',
+        row('Era', 'fi-era') +
+        row('Guild', 'fi-guild') +
+        row('Attack', 'fi-atk') +
+        row('Defense', 'fi-def') +
+        row('Arc bonus', 'fi-arc')
+      )}
+      ${section('bonus', 'Bonuses',
+        row('Spoils of War', 'fi-b-spoils') +
+        row('Diplomatic Gift', 'fi-b-diplo') +
+        row('First Strike', 'fi-b-strike') +
+        row('Aid Goods', 'fi-b-aid'),
+        true
+      )}
+      <div class="foe-info-section" id="fi-wrap-gb" style="display:none">
+        <div class="foe-info-sec-hdr" data-sec="gb">Great Building</div>
+        <div class="foe-info-sec-body" id="fi-body-gb">
+          <div class="foe-info-row">
+            <span class="foe-info-value" id="fi-gb-name" style="font-size:11px">-</span>
+            <span class="foe-info-muted" id="fi-gb-level"></span>
+          </div>
+          ${barHtml('fi-gb-bar', 'fi-gb-progress')}
+        </div>
+      </div>
+      <div class="foe-info-section" id="fi-wrap-wc" style="display:none">
+        <div class="foe-info-sec-hdr" data-sec="wc">World Challenge</div>
+        <div class="foe-info-sec-body" id="fi-body-wc">
+          ${row('Level', 'fi-wc-level')}
+          ${barHtml('fi-wc-bar', 'fi-wc-progress')}
+        </div>
+      </div>
+      ${section('goods', 'Goods', '<div id="fi-goods-rows"></div>', true)}
+      <div id="foe-info-player">Waiting for data\u2026</div>
+    </div>`;
 
-  const mountTarget = document.body || document.documentElement;
-  mountTarget.appendChild(overlay);
+  // Accordion toggle
+  overlay.querySelectorAll<HTMLElement>('.foe-info-sec-hdr').forEach((hdr) => {
+    hdr.addEventListener('click', () => {
+      const body = hdr.nextElementSibling as HTMLElement | null;
+      hdr.classList.toggle('collapsed');
+      body?.classList.toggle('collapsed');
+    });
+  });
 
   const body = overlay.querySelector('#foe-info-body') as HTMLElement;
-  const toggleButton = overlay.querySelector('#foe-info-toggle') as HTMLButtonElement;
-  const hideButton = overlay.querySelector('#foe-info-hide') as HTMLButtonElement;
+  const toggleBtn = overlay.querySelector('#fi-toggle') as HTMLButtonElement;
+  const hideBtn = overlay.querySelector('#fi-hide') as HTMLButtonElement;
   const header = overlay.querySelector('#foe-info-header') as HTMLElement;
 
   let minimized = false;
-  toggleButton.addEventListener('click', (event) => {
-    event.stopPropagation();
+  toggleBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
     minimized = !minimized;
     body.style.display = minimized ? 'none' : '';
-    toggleButton.textContent = minimized ? '+' : '-';
+    toggleBtn.textContent = minimized ? '+' : '\u2212';
   });
-
-  hideButton.addEventListener('click', (event) => {
-    event.stopPropagation();
+  hideBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
     overlay?.classList.add('hidden');
   });
 
   makeDraggable(overlay, header);
-
+  (document.body || document.documentElement).appendChild(overlay);
   return overlay;
 };
 
-const updateOverlay = (payload: HudPayload) => {
+const setBar = (fillId: string, captionId: string, current: number, total: number, unit = '') => {
+  const pct = total > 0 ? Math.min(100, Math.round((current / total) * 100)) : 0;
+  const fill = document.getElementById(fillId);
+  if (fill) fill.style.width = `${pct}%`;
+  setText(captionId, `${fmt(current)} / ${fmt(total)}${unit} (${pct}%)`);
+};
+
+const updateOverlay = (payload: HudPayload): void => {
   const overlay = ensureOverlay();
   overlay.classList.remove('hidden');
 
-  setText('foe-info-coins', fmt(payload.coins));
-  setText('foe-info-supplies', fmt(payload.supplies));
-  if (typeof payload.fpTotal === 'number') {
-    setText('foe-info-fp', fmt(payload.fpTotal));
-  } else {
-    setText('foe-info-fp', fmt(payload.fp));
-  }
-  setText('foe-info-diamonds', fmt(payload.diamonds));
-  setText('foe-info-medals', fmt(payload.medals));
-  setText('foe-info-population', fmt(payload.population));
-  setText('foe-info-world', payload.world || '-');
-  setText('foe-info-era', payload.era || '-');
+  // Resources
+  setText('fi-coins', fmt(payload.coins));
+  setText('fi-supplies', fmt(payload.supplies));
+  setText('fi-fp', typeof payload.fpTotal === 'number' ? fmt(payload.fpTotal) : fmt(payload.fp));
+  setText('fi-diamonds', fmt(payload.diamonds));
+  setText('fi-medals', fmt(payload.medals));
+  setText('fi-pop', fmt(payload.population));
 
-  const playerLine = payload.playerName
-    ? `${payload.playerName}${payload.world ? ` - ${payload.world}` : ''}`
-    : 'Connected to FoE Info';
-  setText('foe-info-player', playerLine);
+  // City
+  setText('fi-era', payload.era || '-');
+  setText('fi-guild', payload.guildName || '-');
+  setText('fi-atk', typeof payload.atkBonus === 'number' ? `+${payload.atkBonus}%` : '-');
+  setText('fi-def', typeof payload.defBonus === 'number' ? `+${payload.defBonus}%` : '-');
+  setText('fi-arc', typeof payload.arcBonus === 'number' ? `${payload.arcBonus}%` : '-');
+
+  // Bonuses
+  setText('fi-b-spoils', String(payload.bonusSpoils ?? 0));
+  setText('fi-b-diplo', String(payload.bonusDiplomatic ?? 0));
+  setText('fi-b-strike', String(payload.bonusStrike ?? 0));
+  setText('fi-b-aid', String(payload.bonusAid ?? 0));
+
+  // Great Building
+  const gbWrap = document.getElementById('fi-wrap-gb');
+  if (gbWrap) {
+    const hasGb = !!payload.gbName;
+    gbWrap.style.display = hasGb ? '' : 'none';
+    if (hasGb) {
+      setText('fi-gb-name', payload.gbName!);
+      setText('fi-gb-level', `Lv ${payload.gbLevel ?? '?'}`);
+      setBar('fi-gb-bar', 'fi-gb-progress', payload.gbCurrent ?? 0, payload.gbTotal ?? 1, ' FP');
+    }
+  }
+
+  // World Challenge
+  const wcWrap = document.getElementById('fi-wrap-wc');
+  if (wcWrap) {
+    const hasWc = typeof payload.wcLevel === 'number';
+    wcWrap.style.display = hasWc ? '' : 'none';
+    if (hasWc) {
+      setText('fi-wc-level', String(payload.wcLevel));
+      setBar('fi-wc-bar', 'fi-wc-progress', payload.wcPoints ?? 0, payload.wcThreshold ?? 1, ' pts');
+    }
+  }
+
+  // Goods
+  const goodsRows = document.getElementById('fi-goods-rows');
+  if (goodsRows && payload.goods?.length) {
+    goodsRows.innerHTML = payload.goods
+      .map(({ k, v }) =>
+        `<div class="foe-info-row"><span class="foe-info-label">${GOODS_LABELS[k] ?? k}</span><span class="foe-info-value">${fmt(v)}</span></div>`)
+      .join('');
+  }
+
+  // Footer
+  setText('foe-info-player',
+    payload.playerName
+      ? `${payload.playerName}${payload.world ? ` \u00b7 ${payload.world}` : ''}`
+      : 'Connected to FoE Info');
 };
 
-const mergePayload = (
-  current: HudPayload,
-  incoming: HudPayload,
-): HudPayload => {
-  return {
-    ...current,
-    ...incoming,
-    fpTotal:
-      typeof incoming.fpTotal === 'number' ? incoming.fpTotal : current.fpTotal,
-  };
+const mergePayload = (current: HudPayload, incoming: HudPayload): HudPayload => {
+  // Only apply fields that are explicitly set — undefined fields from the sniffer
+  // (which only knows about resources) must not wipe DevTools-only fields.
+  const patch = Object.fromEntries(
+    Object.entries(incoming).filter(([, v]) => v !== undefined),
+  ) as Partial<HudPayload>;
+  return { ...current, ...patch };
 };
 
 const installInPageSniffer = () => {

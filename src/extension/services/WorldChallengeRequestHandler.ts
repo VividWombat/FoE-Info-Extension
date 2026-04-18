@@ -59,6 +59,8 @@ type WorldChallengeOverview = {
  */
 let configLevels: WorldChallengeLevel[] = [];
 
+export let hudWcState: { level: number; points: number; threshold: number } | null = null;
+
 /**
  * Renders the World Challenge card into `targetDiv`.
  *
@@ -121,6 +123,12 @@ export function handleWorldChallengeRequest(
     const overview = msg.responseData as WorldChallengeOverview | undefined;
     if (overview) {
       render(overview, worldchallengeDIV);
+      const nextLevel = configLevels.find((l) => l.level === overview.currentPlayerLevel + 1);
+      hudWcState = {
+        level: overview.currentPlayerLevel,
+        points: overview.worldProgressPoints,
+        threshold: nextLevel?.worldProgressPointsToComplete ?? 0,
+      };
     }
     return true;
   }
