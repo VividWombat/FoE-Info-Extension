@@ -87,6 +87,8 @@ type MiscDeps = {
   getLimitedBonuses: (msg: MiscMessage) => void;
   boostService: (msg: MiscMessage) => void;
   boostServiceAllBoosts: (msg: MiscMessage) => void;
+  timerBoostService: (msg: MiscMessage) => void;
+  allyService: (msg: MiscMessage) => void;
 };
 
 export function handleMiscRequest(msg: MiscMessage, deps: MiscDeps): boolean {
@@ -118,6 +120,8 @@ export function handleMiscRequest(msg: MiscMessage, deps: MiscDeps): boolean {
     getLimitedBonuses,
     boostService,
     boostServiceAllBoosts,
+    timerBoostService,
+    allyService,
   } = deps;
 
   if (msg.requestClass === 'ConversationService') {
@@ -339,7 +343,16 @@ export function handleMiscRequest(msg: MiscMessage, deps: MiscDeps): boolean {
     } else if (msg.requestMethod === 'getAllBoosts') {
       boostServiceAllBoosts(msg);
     } else if (msg.requestMethod === 'getTimerBoost') {
-      // TODO
+      timerBoostService(msg);
+    } else {
+      return false;
+    }
+    return true;
+  }
+
+  if (msg.requestClass === 'AllyService') {
+    if (msg.requestMethod === 'getAssignedAllies') {
+      allyService(msg);
     } else {
       return false;
     }

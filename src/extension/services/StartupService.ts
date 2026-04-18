@@ -1049,17 +1049,71 @@ export function boostService(msg) {
   //console.debug('CityDefense:', CityDefense);
 }
 
-export function boostServiceAllBoosts(msg) {
-  // console.debug('msg:', msg);
+function accumulateBoosts(boosts: any[]): void {
+  let fpProductionBoost = 0;
+  for (let j = 0; j < boosts.length; j++) {
+    const b = boosts[j];
+    if (b.type == 'coin_production') City.CoinBoost += b.value;
+    else if (b.type == 'forge_points_production') fpProductionBoost += b.value;
+    else if (b.type == 'att_boost_attacker') {
+      if (b.targetedFeature == 'all') City.Attack += b.value;
+      else if (b.targetedFeature == 'battleground') City.GBGAttackingAttack += b.value;
+      else if (b.targetedFeature == 'guild_expedition') City.GEAttackingAttack += b.value;
+      else if (b.targetedFeature == 'guild_raids') City.QIAttackingAttack += b.value;
+    } else if (b.type == 'att_boost_defender') {
+      if (b.targetedFeature == 'all') City.CityAttack += b.value;
+      else if (b.targetedFeature == 'battleground') City.GBGDefendingAttack += b.value;
+      else if (b.targetedFeature == 'guild_expedition') City.GEDefendingAttack += b.value;
+      else if (b.targetedFeature == 'guild_raids') City.QIDefendingAttack += b.value;
+    } else if (b.type == 'def_boost_attacker') {
+      if (b.targetedFeature == 'all') City.Defense += b.value;
+      else if (b.targetedFeature == 'battleground') City.GBGAttackingDefense += b.value;
+      else if (b.targetedFeature == 'guild_expedition') City.GEAttackingDefense += b.value;
+      else if (b.targetedFeature == 'guild_raids') City.QIAttackingDefense += b.value;
+    } else if (b.type == 'def_boost_defender') {
+      if (b.targetedFeature == 'all') City.CityDefense += b.value;
+      else if (b.targetedFeature == 'battleground') City.GBGDefendingDefense += b.value;
+      else if (b.targetedFeature == 'guild_expedition') City.GEDefendingDefense += b.value;
+      else if (b.targetedFeature == 'guild_raids') City.QIDefendingDefense += b.value;
+    } else if (b.type == 'att_def_boost_attacker') {
+      if (b.targetedFeature == 'all') { City.Attack += b.value; City.Defense += b.value; }
+      else if (b.targetedFeature == 'battleground') { City.GBGAttackingAttack += b.value; City.GBGAttackingDefense += b.value; }
+      else if (b.targetedFeature == 'guild_expedition') { City.GEAttackingAttack += b.value; City.GEAttackingDefense += b.value; }
+      else if (b.targetedFeature == 'guild_raids') { City.QIAttackingAttack += b.value; City.QIAttackingDefense += b.value; }
+    } else if (b.type == 'att_def_boost_defender') {
+      if (b.targetedFeature == 'all') { City.CityAttack += b.value; City.CityDefense += b.value; }
+      else if (b.targetedFeature == 'battleground') { City.GBGDefendingAttack += b.value; City.GBGDefendingDefense += b.value; }
+      else if (b.targetedFeature == 'guild_expedition') { City.GEDefendingAttack += b.value; City.GEDefendingDefense += b.value; }
+      else if (b.targetedFeature == 'guild_raids') { City.QIDefendingAttack += b.value; City.QIDefendingDefense += b.value; }
+    } else if (b.type == 'att_def_boost_attacker_defender') {
+      if (b.targetedFeature == 'all') { City.Attack += b.value; City.Defense += b.value; City.CityAttack += b.value; City.CityDefense += b.value; }
+      else if (b.targetedFeature == 'battleground') { City.GBGAttackingAttack += b.value; City.GBGAttackingDefense += b.value; City.GBGDefendingAttack += b.value; City.GBGDefendingDefense += b.value; }
+      else if (b.targetedFeature == 'guild_expedition') { City.GEAttackingAttack += b.value; City.GEAttackingDefense += b.value; City.GEDefendingAttack += b.value; City.GEDefendingDefense += b.value; }
+      else if (b.targetedFeature == 'guild_raids') { City.QIAttackingAttack += b.value; City.QIAttackingDefense += b.value; City.QIDefendingAttack += b.value; City.QIDefendingDefense += b.value; }
+    } else if (
+      b.type != 'happiness_amount' &&
+      b.type != 'city_shield' &&
+      b.type != 'life_support' &&
+      b.type != 'supply_production' &&
+      b.type != 'tavern_visit_silver_drop' &&
+      b.type != 'tavern_silver_collect_bonus' &&
+      b.type != 'tavern_visit_fp_drop' &&
+      b.type != 'construction_time' &&
+      b.type != 'recruitment_time'
+    )
+      console.debug('other boost:', b.type, b);
+  }
+  if (fpProductionBoost && City.ForgePoints) {
+    City.ForgePoints += Math.round((City.ForgePoints * fpProductionBoost) / 100);
+  }
+}
+
+export function boostServiceAllBoosts(msg: any) {
   City.CoinBoost = 0;
   City.Attack = 0;
   City.Defense = 0;
-  var AllHappiness = 0;
-  City.Defense = 0;
   City.CityDefense = 0;
   City.CityAttack = 0;
-
-  // To get the total amount, add Attack / Defence / CityAttack / CityDefence
   City.GEAttackingAttack = 0;
   City.GEAttackingDefense = 0;
   City.GEDefendingAttack = 0;
@@ -1072,136 +1126,26 @@ export function boostServiceAllBoosts(msg) {
   City.QIAttackingDefense = 0;
   City.QIDefendingAttack = 0;
   City.QIDefendingDefense = 0;
-  var fpProductionBoost = 0;
 
-  if (msg.responseData.length) {
-    var boost = msg.responseData;
-    // console.debug('all boosts:', boost);
-    for (var j = 0; j < boost.length; j++) {
-      if (boost[j].type == 'coin_production') City.CoinBoost += boost[j].value;
-      else if (boost[j].type == 'forge_points_production')
-        fpProductionBoost += boost[j].value;
-      else if (boost[j].type == 'att_boost_attacker') {
-        if (boost[j].targetedFeature == 'all') {
-          City.Attack += boost[j].value;
-        } else if (boost[j].targetedFeature == 'battleground') {
-          City.GBGAttackingAttack += boost[j].value;
-        } else if (boost[j].targetedFeature == 'guild_expedition') {
-          City.GEAttackingAttack += boost[j].value;
-        } else if (boost[j].targetedFeature == 'guild_raids') {
-          City.QIAttackingAttack += boost[j].value;
-        }
-        // console.debug('Attack:', Attack, boost[j].value);
-      } else if (boost[j].type == 'att_boost_defender') {
-        if (boost[j].targetedFeature == 'all') {
-          City.CityAttack += boost[j].value;
-        } else if (boost[j].targetedFeature == 'battleground') {
-          City.GBGDefendingAttack += boost[j].value;
-        } else if (boost[j].targetedFeature == 'guild_expedition') {
-          City.GEDefendingAttack += boost[j].value;
-        } else if (boost[j].targetedFeature == 'guild_raids') {
-          City.QIDefendingAttack += boost[j].value;
-        }
-        // console.debug('CityAttack:', CityAttack, boost[j].value);
-      } else if (boost[j].type == 'def_boost_attacker') {
-        if (boost[j].targetedFeature == 'all') {
-          City.Defense += boost[j].value;
-        } else if (boost[j].targetedFeature == 'battleground') {
-          City.GBGAttackingDefense += boost[j].value;
-        } else if (boost[j].targetedFeature == 'guild_expedition') {
-          City.GEAttackingDefense += boost[j].value;
-        } else if (boost[j].targetedFeature == 'guild_raids') {
-          City.QIAttackingDefense += boost[j].value;
-        }
-        // console.debug('Defense:', Defense, boost[j].value);
-      } else if (boost[j].type == 'def_boost_defender') {
-        if (boost[j].targetedFeature == 'all') {
-          City.CityDefense += boost[j].value;
-        } else if (boost[j].targetedFeature == 'battleground') {
-          City.GBGDefendingDefense += boost[j].value;
-        } else if (boost[j].targetedFeature == 'guild_expedition') {
-          City.GEDefendingDefense += boost[j].value;
-        } else if (boost[j].targetedFeature == 'guild_raids') {
-          City.QIDefendingDefense += boost[j].value;
-        }
-      } else if (boost[j].type == 'happiness_amount')
-        AllHappiness += boost[j].value;
-      else if (boost[j].type == 'att_def_boost_attacker') {
-        if (boost[j].targetedFeature == 'all') {
-          City.Attack += boost[j].value;
-          City.Defense += boost[j].value;
-        } else if (boost[j].targetedFeature == 'battleground') {
-          City.GBGAttackingAttack += boost[j].value;
-          City.GBGAttackingDefense += boost[j].value;
-        } else if (boost[j].targetedFeature == 'guild_expedition') {
-          City.GEAttackingAttack += boost[j].value;
-          City.GEAttackingDefense += boost[j].value;
-        } else if (boost[j].targetedFeature == 'guild_raids') {
-          City.QIAttackingAttack += boost[j].value;
-          City.QIAttackingDefense += boost[j].value;
-        }
-        // console.debug('Attack/Defense:', boost[j].value);
-      } else if (boost[j].type == 'att_def_boost_defender') {
-        if (boost[j].targetedFeature == 'all') {
-          City.CityAttack += boost[j].value;
-          City.CityDefense += boost[j].value;
-        } else if (boost[j].targetedFeature == 'battleground') {
-          City.GBGDefendingAttack += boost[j].value;
-          City.GBGDefendingDefense += boost[j].value;
-        } else if (boost[j].targetedFeature == 'guild_expedition') {
-          City.GEDefendingAttack += boost[j].value;
-          City.GEDefendingDefense += boost[j].value;
-        } else if (boost[j].targetedFeature == 'guild_raids') {
-          City.QIDefendingAttack += boost[j].value;
-          City.QIDefendingDefense += boost[j].value;
-        }
-        // console.debug('City Attack/Defense:', boost[j].value);
-      } else if (boost[j].type == 'att_def_boost_attacker_defender') {
-        if (boost[j].targetedFeature == 'all') {
-          City.Attack += boost[j].value;
-          City.Defense += boost[j].value;
-          City.CityAttack += boost[j].value;
-          City.CityDefense += boost[j].value;
-        } else if (boost[j].targetedFeature == 'battleground') {
-          City.GBGAttackingAttack += boost[j].value;
-          City.GBGAttackingDefense += boost[j].value;
-          City.GBGDefendingAttack += boost[j].value;
-          City.GBGDefendingDefense += boost[j].value;
-        } else if (boost[j].targetedFeature == 'guild_expedition') {
-          City.GEAttackingAttack += boost[j].value;
-          City.GEAttackingDefense += boost[j].value;
-          City.GEDefendingAttack += boost[j].value;
-          City.GEDefendingDefense += boost[j].value;
-        } else if (boost[j].targetedFeature == 'guild_raids') {
-          City.QIAttackingAttack += boost[j].value;
-          City.QIAttackingDefense += boost[j].value;
-          City.QIDefendingAttack += boost[j].value;
-          City.QIDefendingDefense += boost[j].value;
-        }
-        // console.debug('Attack/Defense for Att/Def:', boost[j].value);
-      } else if (boost[j].type == 'forge_points_production') {
-        City.ForgePoints += boost[j].value;
-      } else if (
-        boost[j].type != 'city_shield' &&
-        boost[j].type != 'life_support' &&
-        boost[j].type != 'supply_production' &&
-        boost[j].type != 'tavern_visit_silver_drop' &&
-        boost[j].type != 'tavern_silver_collect_bonus' &&
-        boost[j].type != 'tavern_visit_fp_drop' &&
-        boost[j].type != 'construction_time'
-      )
-        console.debug('other boost:', boost[j].type, boost[j]);
+  if (msg.responseData?.length) {
+    accumulateBoosts(msg.responseData);
+  }
+}
+
+export function timerBoostService(msg: any) {
+  const rd = msg.responseData as { boosts?: any[] } | undefined;
+  if (!rd?.boosts?.length) return;
+  accumulateBoosts(rd.boosts);
+}
+
+export function allyService(msg: any) {
+  const allies = msg.responseData as any[] | undefined;
+  if (!Array.isArray(allies)) return;
+  for (const ally of allies) {
+    const boosts: any[] | undefined = ally?.currentLevel?.boosts;
+    if (Array.isArray(boosts) && boosts.length) {
+      accumulateBoosts(boosts);
     }
-    if (fpProductionBoost && City.ForgePoints) {
-      City.ForgePoints += Math.round(
-        (City.ForgePoints * fpProductionBoost) / 100,
-      );
-    }
-    // if(showBoosts)
-    // output.innerHTML = `<div class="alert alert-info alert-dismissible show" role="alert">${element.close()}Boosts:<p>Coins ${CoinBoost}%</p><p>Attack ${Attack}%</p><p>Defense ${Defense}%</p></div>`;
-    // console.debug('CoinBoost:', CoinBoost);
-    // console.debug('Attack:', Attack);
-    // console.debug('CityDefense:', CityDefense);
   }
 }
 

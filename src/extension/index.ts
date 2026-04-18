@@ -80,11 +80,13 @@ import {
   setResourceDefs,
 } from './services/ResourceService';
 import {
+  allyService,
   boostService,
   boostServiceAllBoosts,
   City,
   emissaryService,
   startupService,
+  timerBoostService,
 } from './services/StartupService';
 import { handleStartupServiceRequest } from './services/StartupRequestHandler';
 import {
@@ -152,6 +154,9 @@ export var BoostMetadataDefs: GenericRecord[] = [];
 export var VolcanoProvinceDefs: GenericRecord[] = [];
 export var WaterfallProvinceDefs: GenericRecord[] = [];
 export var BuildingDefs: GenericRecord[] = [];
+type BuildingBoostHint = { type: string; value: number; targetedFeature: string };
+// All BoostHints per building type per era, extracted from building metadata components
+export var BuildingBoostHints: Record<string, Record<string, BuildingBoostHint[]>> = {};
 // flag to indicate that all metadata files have been processed
 export var metadataLoaded = false;
 export var hiddenRewards: GenericRecord[] = [];
@@ -988,6 +993,8 @@ function handleWebSocketMessage(msg: import('./services/types').HandlerMessage):
     getLimitedBonuses,
     boostService,
     boostServiceAllBoosts,
+    timerBoostService,
+    allyService,
   }) ||
   handleWorldChallengeRequest(msg, worldchallengeDIV);
   // Additional handlers can be chained here as new WS services are discovered.
@@ -2052,6 +2059,48 @@ function rewardObserve() {
   }
 }
 
+function extractBuildingBoostHints(msg: any): void {
+  const components = msg.components;
+  if (!components || typeof components !== 'object') return;
+  for (const [era, comp] of Object.entries(components)) {
+    const hints: BuildingBoostHint[] = [];
+
+    const boosts: any[] = (comp as any)?.boosts?.boosts ?? [];
+    hints.push(
+      ...boosts
+        .filter((b) => b.type && typeof b.value === 'number')
+        .map((b) => ({ type: b.type, value: b.value, targetedFeature: b.targetedFeature ?? 'all' })),
+    );
+
+    const lookup: Record<string, any> = (comp as any)?.lookup?.rewards ?? {};
+    const options: any[] = (comp as any)?.production?.options ?? [];
+    let maxMilitary = 0;
+    for (const option of options) {
+      let optionMilitary = 0;
+      for (const product of (option.products ?? [])) {
+        if (product.type !== 'genericReward') continue;
+        const id: string = product.reward?.id ?? '';
+        if (id.startsWith('genb_random') && id.includes('unit_chest')) {
+          const amount: number | undefined = lookup[id]?.possible_rewards?.[0]?.reward?.amount;
+          if (typeof amount === 'number') optionMilitary += amount;
+        } else if (id.startsWith('era_unit#')) {
+          const amount = parseInt(id.split('#')[3] ?? '0', 10);
+          if (amount > 0) optionMilitary += amount;
+        }
+      }
+      if (optionMilitary > maxMilitary) maxMilitary = optionMilitary;
+    }
+    if (maxMilitary > 0) {
+      hints.push({ type: 'military_unit_production', value: maxMilitary, targetedFeature: 'all' });
+    }
+
+    if (hints.length) {
+      if (!BuildingBoostHints[msg.id]) BuildingBoostHints[msg.id] = {};
+      BuildingBoostHints[msg.id][era] = hints;
+    }
+  }
+}
+
 function processMetadataEntry(msg) {
   if (
     msg.__class__ &&
@@ -2079,6 +2128,7 @@ function processMetadataEntry(msg) {
       };
     }
     CityEntityDefs[msg.id] = msg;
+    extractBuildingBoostHints(msg);
   } else if (msg.__class__ && msg.__class__ == 'GenericCityEntity') {
     if (!CityEntityDefs[msg.id]) {
       CityEntityDefs[msg.id] = {
@@ -2089,6 +2139,7 @@ function processMetadataEntry(msg) {
       };
     }
     CityEntityDefs[msg.id] = msg;
+    extractBuildingBoostHints(msg);
   } else if (msg.__class__ && msg.__class__ == 'UnitType') {
     MilitaryDefs[msg.unitTypeId] = {
       name: msg.name,
