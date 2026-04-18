@@ -117,25 +117,25 @@ body.ui-mode-classic .panel-content .alert {
   box-shadow: 0 1px 6px rgba(16, 40, 78, 0.12);
 }
 
-/* Classic mode light theme - dark pastel palette */
+/* Classic mode light theme - warm parchment palette */
 body:not([data-theme='dark']).ui-mode-classic {
-  --foe-color-background: #2d1f14;
-  --foe-color-text-primary: #ffdcc0;
-  --foe-color-surface: #3d2914;
-  --foe-color-border: #8a6e42;
-  --foe-color-title-bg: linear-gradient(180deg, #5f432a 0%, #4d341c 100%);
-  --foe-color-favorite: #e8cb89;
+  --foe-color-background: #f5f0e6;
+  --foe-color-text-primary: #2d1f14;
+  --foe-color-surface: #faf5ec;
+  --foe-color-border: #c4a878;
+  --foe-color-title-bg: linear-gradient(180deg, #e8d5a8 0%, #d4bc82 100%);
+  --foe-color-favorite: #7a5e1a;
 }
 
 body:not([data-theme='dark']).ui-mode-classic .panel-title {
-  border: 1px solid rgba(232, 203, 137, 0.3);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(140, 100, 30, 0.4);
+  box-shadow: 0 2px 8px rgba(80, 50, 10, 0.18);
 }
 
 body:not([data-theme='dark']).ui-mode-classic .ui-mode-badge {
-  background: rgba(232, 203, 137, 0.2);
-  color: #e8cb89;
-  border-color: rgba(232, 203, 137, 0.5);
+  background: rgba(120, 85, 20, 0.15);
+  color: #5a3e0a;
+  border-color: rgba(120, 85, 20, 0.35);
 }
 
 .panel-content {
@@ -209,13 +209,13 @@ body[data-theme='dark'] .ui-mode-badge {
 }
 
 body:not([data-theme='dark']).ui-mode-classic .panel-title {
-  background: linear-gradient(180deg, #dfe9f6 0%, #c8d8ee 100%);
-  border-color: #8ea8cc;
+  background: linear-gradient(180deg, #e8d5a8 0%, #d4bc82 100%);
+  border-color: #b8973a;
 }
 
 body:not([data-theme='dark']).ui-mode-classic .panel-content .alert {
-  background-color: #f6f9fe;
-  border-color: #bdd0ea;
+  background-color: #faf5ec;
+  border-color: #c4a878;
 }
 
 body:not([data-theme='dark']).ui-mode-traditional .panel-title {
@@ -910,6 +910,17 @@ hr {
 // toggle in Options (body[data-design-preview="true"]).
 // The original panel layouts remain fully intact without this attribute.
 
+// ── Per-view preview layout partials ─────────────────────────────────────────
+// Each partial is scoped to body[data-design-preview="true"] and can be
+// reverted independently without touching the other views.
+@import 'preview-empire';
+@import 'preview-gb';
+@import 'preview-expedition';
+@import 'preview-goods';
+// Two-column grid + structural layout prototype (preview mode only).
+// Disable this import to revert to the stacked single-column layout.
+@import 'preview-layout';
+
 body[data-design-preview='true'] {
   // Chronicler surface stack
   --foe-preview-bg:              #210f00;
@@ -1025,5 +1036,41 @@ body[data-design-preview='true'] {
 
   ::-webkit-scrollbar-thumb:hover {
     background: #8a6e42;
+  }
+
+  // Invest indicator colours — override for the dark Chronicler palette.
+  // The base tokens (#007e33, #cc0000) are too dark on --foe-preview-bg.
+  --foe-color-invest-good: var(--foe-preview-moss);
+  --foe-color-invest-fair: var(--foe-preview-gold-dim);
+  --foe-color-invest-bad: #e06c75;
+  --foe-color-warning-icon: var(--foe-preview-moss);
+  --foe-color-favorite: var(--foe-preview-gold);
+  --foe-color-favorite-hover: var(--foe-preview-vellum);
+
+  // Semantic alert variants — retain meaning via inset border accent.
+  // The base rule already sets all .panel-content .alert to --foe-preview-surface;
+  // these more-specific selectors layer a coloured inset border on top.
+  .panel-content .alert-danger {
+    box-shadow:
+      0 2px 8px rgba(0, 0, 0, 0.4),
+      inset 0 0 0 1px rgba(224, 108, 117, 0.45);
+  }
+
+  .panel-content .alert-success {
+    box-shadow:
+      0 2px 8px rgba(0, 0, 0, 0.4),
+      inset 0 0 0 1px rgba(191, 214, 160, 0.32);
+  }
+
+  .panel-content .alert-warning {
+    box-shadow:
+      0 2px 8px rgba(0, 0, 0, 0.4),
+      inset 0 0 0 1px rgba(232, 203, 137, 0.42);
+  }
+
+  .panel-content .alert-info {
+    box-shadow:
+      0 2px 8px rgba(0, 0, 0, 0.4),
+      inset 0 0 0 1px rgba(117, 140, 176, 0.38);
   }
 }
