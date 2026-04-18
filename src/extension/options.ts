@@ -99,6 +99,7 @@ function save_options() {
 
   tool.language = document.getElementById('language').value;
   tool.uiMode = document.getElementById('uiMode').value;
+  tool.designPreview = (document.getElementById('designPreview') as HTMLInputElement).checked;
   var targets = document.getElementById('targets').value;
   var targetText = document.getElementById('targetText').value;
   var donationPercent = document.getElementById('donationPercent').value;
@@ -139,6 +140,7 @@ function save_options() {
       tool: {
         language: tool.language,
         uiMode: tool.uiMode,
+        designPreview: tool.designPreview,
       },
       targets: targets,
       targetText: targetText,
@@ -190,6 +192,8 @@ function restore_options() {
         document.getElementById('language').value = items.tool.language;
         document.getElementById('uiMode').value =
           items.tool.uiMode || 'classic';
+        (document.getElementById('designPreview') as HTMLInputElement).checked =
+          !!items.tool.designPreview;
         console.debug(items.tool);
       } else {
         document.getElementById('uiMode').value = 'classic';

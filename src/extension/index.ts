@@ -315,6 +315,13 @@ const applyUiMode = (mode: unknown) => {
   }
 };
 
+export let designPreview = false;
+
+const applyDesignPreview = (enabled: boolean) => {
+  designPreview = enabled;
+  document.body.setAttribute('data-design-preview', enabled ? 'true' : 'false');
+};
+
 const applyTheme = (themeName: unknown) => {
   const normalizedTheme = themeName === 'dark' ? 'dark' : 'light';
   darkMode = normalizedTheme;
@@ -330,6 +337,7 @@ browser.storage.local.get('tool').then((result: any) => {
   if (result?.tool?.uiMode) {
     applyUiMode(result.tool.uiMode);
   }
+  applyDesignPreview(!!result?.tool?.designPreview);
 });
 // if (window.matchMedia &&
 //     window.matchMedia('(prefers-color-scheme: dark)').matches) {
@@ -1347,6 +1355,7 @@ function storageChange(
       }
       console.debug(language);
       applyUiMode(toolSettings?.uiMode);
+      applyDesignPreview(!!toolSettings?.designPreview);
     } else if (key == 'targets') {
       // console.debug(storageChange.newValue,targetsTopic);
       targetsTopic = storageChange.newValue;

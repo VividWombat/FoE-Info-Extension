@@ -904,3 +904,126 @@ hr {
 //         padding-bottom: 1px;
 //         border-top: 0
 //     }
+
+// ── Design Preview mode ───────────────────────────────────────────────────────
+// All rules below only apply when the user has enabled the Preview Redesign
+// toggle in Options (body[data-design-preview="true"]).
+// The original panel layouts remain fully intact without this attribute.
+
+body[data-design-preview='true'] {
+  // Chronicler surface stack
+  --foe-preview-bg:              #210f00;
+  --foe-preview-surface:         #2b1703;
+  --foe-preview-surface-high:    #3c250e;
+  --foe-preview-surface-highest: #482f18;
+  --foe-preview-gold:            #e8cb89;
+  --foe-preview-gold-dim:        #e0c482;
+  --foe-preview-vellum:          #e6bf9e;
+  --foe-preview-oak:             #5f432a;
+  --foe-preview-moss:            #bfd6a0;
+  --foe-preview-text:            #ffdcc0;
+  --foe-preview-text-muted:      #cfc5b5;
+  --foe-preview-outline:         rgba(76, 70, 58, 0.6);
+
+  background: var(--foe-preview-bg);
+  color: var(--foe-preview-text);
+  font-family: 'Work Sans', 'Segoe UI', sans-serif;
+
+  // Override panel-content card backgrounds
+  .panel-content .alert {
+    background: var(--foe-preview-surface);
+    border: none;
+    border-radius: 0.25rem;
+    box-shadow:
+      0 2px 8px rgba(0, 0, 0, 0.4),
+      inset 0 0 0 1px var(--foe-preview-outline);
+    color: var(--foe-preview-text);
+  }
+
+  // Card header accent bar
+  .alert-heading,
+  .alert > p:first-child > strong:first-child {
+    color: var(--foe-preview-gold);
+    font-family: 'Noto Serif', Georgia, serif;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  // Table styling
+  table {
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  th {
+    background: var(--foe-preview-surface-high);
+    color: var(--foe-preview-gold);
+    font-family: 'Noto Serif', Georgia, serif;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0.3rem 0.5rem;
+    border-bottom: 1px solid rgba(232, 203, 137, 0.2);
+  }
+
+  td {
+    padding: 0.25rem 0.5rem;
+    border-bottom: 1px solid rgba(76, 70, 58, 0.35);
+    color: var(--foe-preview-text);
+    font-size: 0.78rem;
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  tr:hover td {
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  // Badge / pill components
+  .badge {
+    background: rgba(232, 203, 137, 0.15);
+    color: var(--foe-preview-gold);
+    border: 1px solid rgba(232, 203, 137, 0.3);
+    border-radius: 999px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+
+  // Progress bars
+  .progress {
+    background: var(--foe-preview-surface-highest);
+    border-radius: 999px;
+    height: 0.4rem;
+  }
+
+  .progress-bar {
+    background: linear-gradient(90deg, var(--foe-preview-moss) 0%, var(--foe-preview-gold) 100%);
+    border-radius: 999px;
+  }
+
+  // Panel title bar
+  .panel-title {
+    background: linear-gradient(180deg, var(--foe-preview-surface-high) 0%, var(--foe-preview-surface) 100%);
+    border-bottom: 1px solid rgba(232, 203, 137, 0.2);
+  }
+
+  // Scrollbar
+  ::-webkit-scrollbar-track {
+    background: var(--foe-preview-surface);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--foe-preview-oak);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #8a6e42;
+  }
+}
