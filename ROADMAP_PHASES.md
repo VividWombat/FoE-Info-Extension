@@ -124,7 +124,11 @@ Deliverables:
 Status:
 
 - Stage 1 completed (legacy discordapp permission removed).
-- Stages 2-3 remain pending decisions/validation.
+- Stage 2a completed: `*.googleusercontent.com` removed — confirmed unused in source.
+- Stage 2b pending decision: `*.google.com/*` can be narrowed to `script.google.com/macros/s/*`
+  only after options validation enforces Apps Script URL format (see PERMISSIONS_AUDIT.md).
+- Stage 3 closed (no change): `webRequest` is actively required for CDN header stripping
+  at index.ts; permission retained.
 
 ## Phase 7: QA and Release (Completed)
 

@@ -10,7 +10,7 @@ This document tracks current permissions and proposes staged, reversible changes
   - src/chrome/manifest_firefox.json
 - Current build target: Chrome first.
 
-## Current Baseline (After Stage 1)
+## Current Baseline (After Stage 2a)
 
 ### permissions
 
@@ -18,14 +18,14 @@ This document tracks current permissions and proposes staged, reversible changes
 - unlimitedStorage
 - clipboardWrite
 - webRequest
+- tabs
 
 ### host_permissions
 
-- https://_.forgeofempires.com/game/_
-- https://_.google.com/_
-- https://\*.googleusercontent.com/
+- https://*.forgeofempires.com/game/*
+- https://*.google.com/*
 - https://discord.com/api/webhooks/*
-- https://_.innogamescdn.com/_
+- https://*.innogamescdn.com/*
 
 ## Proposed Staged Changes
 
@@ -44,31 +44,43 @@ Stage 1 is complete. Use the remaining sequence for future milestones.
 - Rollback:
   - Re-add exact host pattern in all source manifests.
 
-### Stage 2: Narrow Google host patterns (if feature usage allows)
+### Stage 2a: Remove unused googleusercontent host permission (Completed)
 
-- Candidates to narrow/remove:
-  - `host_permissions`: `https://*.google.com/*`
+- Removed:
   - `host_permissions`: `https://*.googleusercontent.com/`
 - Reason:
-  - Broad host permissions increase warning surface.
-- Validation before change:
-  - Confirm exact Google APIs/endpoints used by sheets integration.
-  - Replace with minimal concrete host patterns only after endpoint mapping.
-  - Confirm user-configured sheet URLs are still supported by the narrowed scope.
+  - No source file in `src/` references this host pattern.
+  - No Google user content (avatars, Drive files) is fetched by any handler.
+- Validation performed:
+  - Full grep of `src/` for `googleusercontent` found zero references outside manifests.
+  - Pattern was present since project origin; no feature was ever wired to it.
 - Rollback:
-  - Re-add original wildcard hosts in all source manifests.
+  - Re-add `"https://*.googleusercontent.com/"` to `host_permissions` in all three source manifests.
 
-### Stage 3: Re-evaluate webRequest permission
+### Stage 2b: Narrow *.google.com/* (Decision Required)
 
-- Candidate removal:
-  - permissions: webRequest
+- Candidate to narrow:
+  - `host_permissions`: `https://*.google.com/*` → `https://script.google.com/macros/s/*`
 - Reason:
-  - If not used in extension contexts that require explicit webRequest API access.
-- Validation before change:
-  - Verify DevTools network listener path and confirm whether manifest webRequest is still required.
-  - Full smoke test of request capture and message parsing.
+  - The only Google endpoint used is the user-configured Apps Script webhook URL.
+  - All examples and code paths use `script.google.com/macros/s/*/exec`.
+- Blocker:
+  - `sheetGuildURL` and `sheetGameURL` are free-form user inputs stored in options.
+  - If any user has configured a non-Apps-Script URL (e.g. `docs.google.com`, custom domain),
+    narrowing the pattern would silently break their sheet integration.
+  - Decision needed: enforce Apps Script URL format in options validation, then narrow.
 - Rollback:
-  - Re-add webRequest to permissions in all source manifests.
+  - Revert to `https://*.google.com/*` in all source manifests.
+
+### Stage 3: webRequest permission — Confirmed Required (Closed)
+
+- Candidate removal: `permissions: webRequest`
+- Validation finding:
+  - `chrome.webRequest.onBeforeSendHeaders.addListener` is called in `src/extension/index.ts:870`.
+  - It strips the extension origin header from requests to `https://*.innogamescdn.com/*`
+    to prevent leaking the extension ID to the game CDN.
+  - This is an active, load-bearing use of the blocking webRequest API.
+- Decision: webRequest permission must remain. Stage 3 is closed with no change.
 
 ## Change Control Rules
 

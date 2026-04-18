@@ -43,7 +43,6 @@
   "host_permissions": [
     "https://*.forgeofempires.com/game/*",
     "https://*.google.com/*",
-    "https://*.googleusercontent.com/",
     "https://discord.com/api/webhooks/*",
     "https://*.innogamescdn.com/*"
   ],
