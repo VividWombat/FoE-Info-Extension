@@ -470,27 +470,27 @@ const init = () => {
   window.addEventListener('message', onFrameForward);
 };
 
-// Install network hooks as early as possible, similar to Forge Companion.
-installInPageSniffer();
+// Initialise only when the user has opted in (default: off).
+chrome.storage.local.get('tool', (result: any) => {
+  if (!result?.tool?.showHud) return;
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', init);
-} else {
-  init();
-}
+  installInPageSniffer();
 
-if (
-  typeof chrome !== 'undefined' &&
-  chrome.runtime &&
-  chrome.runtime.onMessage
-) {
-  chrome.runtime.onMessage.addListener((message: any) => {
-    if (message?.type === 'foe-info-hud:update') {
-      Object.assign(
-        snifferState,
-        mergePayload(snifferState, (message.payload || {}) as HudPayload),
-      );
-      updateOverlay(snifferState);
-    }
-  });
-}
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+  if (chrome.runtime?.onMessage) {
+    chrome.runtime.onMessage.addListener((message: any) => {
+      if (message?.type === 'foe-info-hud:update') {
+        Object.assign(
+          snifferState,
+          mergePayload(snifferState, (message.payload || {}) as HudPayload),
+        );
+        updateOverlay(snifferState);
+      }
+    });
+  }
+});
