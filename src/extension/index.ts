@@ -91,6 +91,8 @@ import {
   handleBlueprintServiceRequest,
   handleRewardServiceRequest,
 } from './services/RewardAndBlueprintRequestHandler';
+import { handleWorldChallengeRequest } from './services/WorldChallengeRequestHandler';
+import { connectWebSocket, disconnectWebSocket } from './services/WebSocketService';
 import setOptions, { showOptions } from './state/showOptions';
 import '../css/main.scss';
 console.debug(toolOptions);
@@ -383,13 +385,14 @@ newelement.className = 'p-8 title';
 title.appendChild(newelement);
 const titleHeading = document.createElement('h6');
 titleHeading.className = 'title';
-// child.innerHTML = pkg.name;
 titleHeading.textContent = EXT_NAME;
 newelement.appendChild(titleHeading);
-uiModeBadge = document.createElement('span');
-uiModeBadge.className = 'ui-mode-badge';
-uiModeBadge.textContent = uiMode === 'traditional' ? 'Traditional' : 'Classic';
-newelement.appendChild(uiModeBadge);
+if (DEV) {
+  uiModeBadge = document.createElement('span');
+  uiModeBadge.className = 'ui-mode-badge';
+  uiModeBadge.textContent = uiMode === 'traditional' ? 'Traditional' : 'Classic';
+  titleHeading.appendChild(uiModeBadge);
+}
 newelement = document.createElement('div');
 newelement.innerHTML = `<span class="material-icons-outlined md-18 options-icon">settings</span>`;
 newelement.classList.toggle('p-2');
@@ -465,6 +468,9 @@ greatbuilding.id = 'greatbuilding';
 export var overview = document.createElement('div');
 content.appendChild(overview);
 overview.id = 'overview';
+export var worldchallengeDIV = document.createElement('div');
+content.appendChild(worldchallengeDIV);
+worldchallengeDIV.id = 'worldchallenge';
 export var cultural = document.createElement('div');
 content.appendChild(cultural);
 cultural.id = 'cultural';
@@ -888,6 +894,44 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
 
 browser.devtools.network.onRequestFinished.addListener(handleRequestFinished);
 
+// Routes a parsed WebSocket frame through the same handler pipeline as HTTP messages.
+// Auth confirmations and telemetry-only frames that return false from all handlers are
+// silently dropped (same as the HTTP catch-all path).
+function handleWebSocketMessage(msg: import('./services/types').HandlerMessage): void {
+  if (!msg.requestClass) return;
+  handleMiscRequest(msg, {
+    conversationService,
+    getConversation,
+    armyUnitManagementService,
+    clearStartup,
+    clearBattleground,
+    ignoredPlayers,
+    setEpocTime,
+    clearForMainCity,
+    helper,
+    getResourceDefinitions,
+    getPlayerResources,
+    getPlayerResourceBag,
+    MyInfo,
+    showOptions,
+    citystats,
+    setHiddenRewards,
+    emissaryService,
+    getCultural: getCulturalDiv,
+    setCultural: setCulturalDiv,
+    Resources,
+    collapse,
+    element,
+    showCultural: { clearCultural },
+    getBonuses,
+    getLimitedBonuses,
+    boostService,
+    boostServiceAllBoosts,
+  }) ||
+  handleWorldChallengeRequest(msg, worldchallengeDIV);
+  // Additional handlers can be chained here as new WS services are discovered.
+}
+
 // When a network request has finished this function will be called.
 // browser.devtools.network.onRequestFinished.addListener().then(request => {
 function handleRequestFinished(request: any) {
@@ -1135,6 +1179,10 @@ function handleRequestFinished(request: any) {
               metadataLoaded: isMetadataLoaded,
               startupService,
               setPendingStartupMsg: setPendingStartupMessage,
+              onSocketParams: (gatewayUrl, token) => {
+                disconnectWebSocket();
+                connectWebSocket(gatewayUrl, token, handleWebSocketMessage);
+              },
             })
           ) {
             // handled in module
@@ -1304,6 +1352,10 @@ function handleRequestFinished(request: any) {
               initTreasury,
               setTreasurySize,
             })
+          ) {
+            // handled in module
+          } else if (
+            handleWorldChallengeRequest(msg, worldchallengeDIV)
           ) {
             // handled in module
           } else {

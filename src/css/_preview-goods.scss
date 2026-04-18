@@ -1,0 +1,29 @@
+// Preview mode — Trade Goods Inventory
+// Goods list table styling: muted labels, emphasised quantities, zebra tint.
+// Only active when body[data-design-preview="true"].
+
+body[data-design-preview='true'] {
+  #goods {
+    // Goods name column — de-emphasise as label
+    td:first-child {
+      color: var(--foe-preview-text-muted);
+      font-size: 0.76rem;
+    }
+
+    // Quantity column — make the number stand out
+    td:nth-child(2) {
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    // Subtle alternating row tint for long goods lists
+    tbody tr:nth-child(even) td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    // Row hover — slightly stronger than base
+    tbody tr:hover td {
+      background: rgba(255, 255, 255, 0.05);
+    }
+  }
+}

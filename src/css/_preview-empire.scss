@@ -1,0 +1,26 @@
+// Preview mode — Empire / City Dashboard
+// Targeted enhancements for city stats, current bonus, and incidents cards.
+// Only active when body[data-design-preview="true"].
+
+body[data-design-preview='true'] {
+  // Stat label column — de-emphasise labels relative to values
+  #citystats,
+  #bonus,
+  #incidents,
+  #visit {
+    td:first-child {
+      color: var(--foe-preview-text-muted);
+      font-size: 0.76rem;
+    }
+
+    td:not(:first-child) {
+      font-weight: 600;
+    }
+
+    // Card-internal dividers
+    hr {
+      border-color: var(--foe-preview-outline);
+      opacity: 1;
+    }
+  }
+}

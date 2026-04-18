@@ -1,0 +1,207 @@
+// Preview mode — Panel Layout Prototype
+//
+// Activates a structural two-column grid and compact card improvements
+// when body[data-design-preview="true"] is set.
+//
+// Design intent (from DESIGN_SYSTEM.md):
+//   - Left column (narrow, ~38%): city stats, world challenge, bonus, incidents
+//   - Right column (wider, ~62%): GB tracker, expedition, battleground, goods
+//   - Cards get a max-height + scroll for long lists (GB donors, expedition)
+//   - Panel title bar gets world + player name inline
+//
+// This is a prototype — all rules are scoped to preview mode so classic/
+// traditional layouts are completely unaffected.
+
+body[data-design-preview='true'] {
+
+  // ── Panel content grid ──────────────────────────────────────────────────────
+  //
+  // Two-column layout. City/status cards go left; game-content cards go right.
+  // Falls back to single column below 500px (narrow devtools panel).
+
+  #content {
+    display: grid;
+    grid-template-columns: 38% 1fr;
+    grid-template-rows: auto;
+    column-gap: 0.5rem;
+    align-items: start;
+
+    // Single-column fallback for very narrow panels
+    @media (max-width: 500px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  // Left column — status / city overview
+  #citystats,
+  #bonus,
+  #incidents,
+  #worldchallenge,
+  #alerts {
+    grid-column: 1;
+  }
+
+  // Right column — game activity cards
+  #donation,
+  #donation2,
+  #donationDIV2,
+  #greatbuilding,
+  #output,
+  #guild,
+  #battleground,
+  #targets,
+  #goods,
+  #overview,
+  #treasury {
+    grid-column: 2;
+  }
+
+  // Cards that span full width (visit, gvg, army, etc. — context-dependent)
+  #visitstats,
+  #visit,
+  #gvg,
+  #army,
+  #info,
+  #cultural,
+  #cityinvested,
+  #cityrewards {
+    grid-column: 1 / -1;
+  }
+
+  // ── Compact card header ─────────────────────────────────────────────────────
+  //
+  // Tighten the card-heading paragraph so the icon + label sit on one line
+  // with less vertical breathing room. This recovers ~4px per card.
+
+  .panel-content .alert > p:first-child {
+    margin-bottom: 0.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    line-height: 1.2;
+  }
+
+  // ── Scrollable long lists ───────────────────────────────────────────────────
+  //
+  // GB donor lists and expedition tables can grow very long. Cap them and
+  // let them scroll so the rest of the panel stays accessible.
+
+  #donation .overflow-y,
+  #donation2 .overflow-y,
+  #donationDIV2 .overflow-y,
+  #guild .overflow,
+  #guild .overflow-y {
+    max-height: 14rem;
+    min-height: 4rem;
+  }
+
+  // ── World Challenge card — inline progress layout ───────────────────────────
+  //
+  // Override the stacked block layout with a compact inline bar so it fits
+  // neatly in the narrow left column.
+
+  #worldchallenge {
+    .alert {
+      padding: 0.4rem 0.6rem;
+    }
+
+    p strong {
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+    }
+
+    .progress {
+      margin-top: 0.35rem;
+      height: 4px;
+    }
+
+    small {
+      font-size: 0.68rem;
+      color: var(--foe-preview-text-muted);
+    }
+  }
+
+  // ── City stats — key-value rows ─────────────────────────────────────────────
+  //
+  // The citystats card renders a simple <table>. In the narrow left column
+  // we tighten padding to keep it readable without wrapping.
+
+  #citystats table,
+  #bonus table {
+    width: 100%;
+
+    td {
+      padding: 0.15rem 0.25rem;
+      font-size: 0.74rem;
+    }
+
+    td:first-child {
+      width: 55%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
+
+  // ── GB tracker — tighter donor cards ───────────────────────────────────────
+
+  #donation,
+  #donation2,
+  #donationDIV2,
+  #greatbuilding {
+    .alert {
+      padding: 0.4rem 0.5rem;
+      margin-bottom: 0.3rem;
+    }
+
+    // Donor name + FP amount side-by-side
+    .table td:first-child {
+      font-size: 0.73rem;
+    }
+
+    .table td:last-child {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  // ── Expedition — compact member rows ───────────────────────────────────────
+
+  #guild {
+    table td {
+      font-size: 0.73rem;
+      padding: 0.15rem 0.3rem;
+    }
+
+    table th {
+      font-size: 0.68rem;
+      padding: 0.2rem 0.3rem;
+    }
+  }
+
+  // ── Goods — two-column micro-grid within the card ──────────────────────────
+  //
+  // Goods renders a long flat list. Display it as a 2-col grid within the
+  // card so it's more scannable in the wider right column.
+
+  #goods table {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 0.5rem;
+
+    // Reset table semantics for grid display
+    thead { display: contents; }
+    tbody { display: contents; }
+    tr    { display: contents; }
+
+    td {
+      font-size: 0.73rem;
+      padding: 0.15rem 0.25rem;
+      border-bottom: 1px solid rgba(76, 70, 58, 0.2);
+    }
+
+    td:first-child {
+      color: var(--foe-preview-text-muted);
+    }
+  }
+}

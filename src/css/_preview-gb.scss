@@ -1,0 +1,39 @@
+// Preview mode — Great Buildings Tracker
+// Enhances safe-vs-unsafe slot distinction and donor table layout
+// using the Chronicler palette.  Only active when body[data-design-preview="true"].
+
+body[data-design-preview='true'] {
+  #donation,
+  #donation2,
+  #donationDIV2,
+  #greatbuilding,
+  #output {
+    // Unsafe-to-donate GBs: strengthen the red inset with a top border-radius accent
+    .alert-danger {
+      border-top: 2px solid rgba(224, 108, 117, 0.55);
+      border-radius: 0.25rem;
+    }
+
+    // Safe GBs: moss-green top accent
+    .alert-success {
+      border-top: 2px solid rgba(191, 214, 160, 0.45);
+      border-radius: 0.25rem;
+    }
+
+    // Donor table — tighten row spacing and add subtle mid separators
+    .table > tbody > tr > td {
+      padding-top: 0.2rem;
+      padding-bottom: 0.2rem;
+      border-bottom: 1px solid rgba(76, 70, 58, 0.25);
+    }
+
+    .table > tbody > tr:last-child > td {
+      border-bottom: none;
+    }
+
+    // Muted footer text (FP totals, etc.)
+    .text-muted {
+      color: var(--foe-preview-text-muted) !important;
+    }
+  }
+}

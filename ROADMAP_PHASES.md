@@ -173,9 +173,25 @@ Deliverables:
 - Per-panel preview layout commits (one per view for easy rollback).
 - Integration test: both layout modes load without JS errors.
 
-Status: Planned.
+Status: Completed.
 
-## Phase 9: Service Expansion (Planned)
+Done:
+
+- Options page redesigned with Chronicler tokens (options.scss, options.html).
+- `designPreview` boolean toggle wired in options.ts and persisted to storage.
+- Panel applies `data-design-preview` attribute via `applyDesignPreview()` in index.ts.
+- Base preview styles in `custom.scss`: surface palette, card backgrounds, table headers,
+  badges, progress bars, panel title, scrollbars.
+- Invest indicator CSS variables overridden for the dark Chronicler palette.
+- Semantic alert variants (danger/success/warning/info) differentiated via coloured inset borders.
+- Per-view SCSS partials added (each independently revertable):
+  - `_preview-empire.scss` — city stats / bonus / incidents / visit cards.
+  - `_preview-gb.scss`     — GB tracker: safe/unsafe top accent bars, donor table density.
+  - `_preview-expedition.scss` — expedition hub: scrollbar contrast, member table density.
+  - `_preview-goods.scss`  — goods inventory: label muting, quantity emphasis, zebra tint.
+- Build verified: webpack compiled with no errors (pre-existing @import deprecation warnings only).
+
+## Phase 9: Service Expansion (In Progress)
 
 Goals:
 
@@ -187,9 +203,33 @@ Scope:
 - New or expanded handlers in `src/extension/index.ts`.
 - New service modules under `src/extension/services/` as needed.
 
-Status: Pending HAR analysis results.
+HAR analysis results (en7 + de20):
+
+14 unique requestClass/requestMethod pairs observed. Already handled: 8.
+
+Newly handled:
+- `WorldChallengeService / getConfig` — stores per-level world-progress thresholds and rewards.
+- `WorldChallengeService / getOverview` — renders a World Challenge card with current player
+  level, world progress points, and a progress bar toward the next server-wide milestone.
+  Renders into `#worldchallenge` div, positioned after the main overview.
+
+Skipped (telemetry only, no player-useful data):
+- `LogService / logPerformanceMetrics` and `logViewportMetrics`
+- `SettingsService / trackStartupTime`
+- `TrackingService / isSentryBlocked` and `trackLoginDone`
+
+Deferred (lower priority / overlaps existing):
+- `ItemStoreService / getEventConfigs` — event shop token detection and end-time countdown.
+- `OtherPlayerService / getEventsPaginated` — aid/tavern activity log.
+
+Notable absence in HAR: ClanService, battle, antiques dealer (HiddenRewardService), and
+GBG/GE requests are not captured (require active gameplay beyond login sequence).
+
+Status: WorldChallengeService wired. Remaining items deferred to future sessions.
 
 ## Current Position
 
-- Completed: Phases 1-7. Phase 6 fully closed.
-- Next: Phase 8 (design preview + options redesign), then Phase 9 (service expansion).
+- Completed: Phases 1-8.
+- Phase 9: In progress — WorldChallengeService wired; ItemStoreService and OtherPlayerService
+  event log deferred.
+- Next: Complete Phase 9 remaining items or begin Phase 10 planning.

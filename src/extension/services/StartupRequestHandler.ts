@@ -41,6 +41,7 @@ type StartupDeps = {
   metadataLoaded: () => boolean;
   startupService: (msg: StartupMessage) => void;
   setPendingStartupMsg: (msg: StartupMessage) => void;
+  onSocketParams?: (gatewayUrl: string, token: string) => void;
 };
 
 export function handleStartupServiceRequest(
@@ -76,6 +77,7 @@ export function handleStartupServiceRequest(
     metadataLoaded,
     startupService,
     setPendingStartupMsg,
+    onSocketParams,
   } = deps;
 
   const contentType = request.request.headers.find(
@@ -100,6 +102,19 @@ export function handleStartupServiceRequest(
     }
     receiveStorage(result as Record<string, unknown>);
   });
+
+  // Extract WebSocket connection parameters from the startup payload.
+  // The token and gateway URL live either at the responseData top level or
+  // inside socket_connection_parameter depending on server version.
+  if (onSocketParams) {
+    const rd = msg.responseData as Record<string, unknown> | undefined;
+    const sp = rd?.socket_connection_parameter as Record<string, unknown> | undefined;
+    const gatewayUrl = (rd?.socketGatewayUrl ?? sp?.socketGatewayUrl) as string | undefined;
+    const token = (rd?.socketToken ?? sp?.socketToken) as string | undefined;
+    if (gatewayUrl && token) {
+      onSocketParams(gatewayUrl, token);
+    }
+  }
 
   output.innerHTML = '';
   overview.innerHTML = '';

@@ -1,0 +1,29 @@
+// Preview mode — Guild Expedition Hub
+// Member contribution table and scrollable list enhancements.
+// Only active when body[data-design-preview="true"].
+
+body[data-design-preview='true'] {
+  #guild {
+    // Expedition cards use alert-info; scrollable overflow area contrast
+    .overflow,
+    .overflow-y {
+      scrollbar-color: var(--foe-preview-oak) var(--foe-preview-surface);
+    }
+
+    // Section label strongs (e.g. round headers, member names)
+    strong {
+      color: var(--foe-preview-vellum);
+    }
+
+    // Top contributor row — subtle gold highlight
+    tbody tr:first-child td {
+      color: var(--foe-preview-gold);
+    }
+
+    // Expedition member table row density
+    td {
+      padding-top: 0.2rem;
+      padding-bottom: 0.2rem;
+    }
+  }
+}
