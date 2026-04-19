@@ -25,7 +25,6 @@ export function getBonuses(msg: Record<string, unknown>) {
   City.Coins = 0;
   City.ArcBonus = 0;
   City.ChatBonus = 0;
-  City.TrazUnits = 0;
 
   // TODO
   // add daily_strategypoint to city info (Daily FP)

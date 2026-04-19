@@ -85,6 +85,9 @@ import {
   boostServiceAllBoosts,
   City,
   emissaryService,
+  MilitaryUnitsAccounted,
+  PlacedBuildingCounts,
+  setMilitaryUnitsText,
   startupService,
   timerBoostService,
 } from './services/StartupService';
@@ -740,6 +743,7 @@ const setAvailableFPText = () => {
     availableFpElement.textContent = String(availablePacksFP + availableFP);
 };
 
+
 const getPlayerID = () => {
   return PlayerID;
 };
@@ -859,7 +863,7 @@ browser.permissions
   })
   .then((result) => {
     // if(checkBeta())
-    console.debug(result);
+    // console.debug(result);
     if (result) {
       // The extension has the permissions.
       // browser.storage.local.get(null, function(items) {
@@ -1074,7 +1078,7 @@ function handleRequestFinished(request: any) {
           const requestMethod =
             typeof msg.requestMethod === 'string' ? msg.requestMethod : '';
 
-          console.debug('msg', msg);
+          // console.debug('msg', msg);
 
           // check if this is static data service info that holds all URLs to all metadata files
           if (
@@ -1790,6 +1794,47 @@ function receiveStorage(result) {
       // if(key == CityEntityDefs)
       CityEntityDefs = value;
       console.debug(key, value);
+      for (const [buildingId, def] of Object.entries(CityEntityDefs as Record<string, any>)) {
+        const placedCount = PlacedBuildingCounts[buildingId] || 0;
+        if (!placedCount) continue;
+        if (!MilitaryUnitsAccounted.has(buildingId)) {
+          const ability = def?.abilities?.find(
+            (a: any) => a.__class__ === 'RandomUnitOfAgeWhenMotivatedAbility',
+          );
+          if (ability?.amount) {
+            MilitaryUnitsAccounted.add(buildingId);
+            City.MilitaryUnits += ability.amount * placedCount;
+            console.debug('[MilUnits] storage motivated', buildingId, 'x' + placedCount, '+' + (ability.amount * placedCount), '=', City.MilitaryUnits);
+          }
+          const comp = (def?.components as Record<string, any> | undefined)?.[MyInfo.era];
+          if (comp) {
+            const lookup: Record<string, any> = comp?.lookup?.rewards ?? {};
+            const options: any[] = comp?.production?.options ?? [];
+            let maxMilitary = 0;
+            for (const option of options) {
+              let optionMilitary = 0;
+              for (const product of (option.products ?? [])) {
+                if (product.type !== 'genericReward') continue;
+                const id: string = product.reward?.id ?? '';
+                if (id.startsWith('genb_random') && id.includes('unit_chest')) {
+                  const amount: number | undefined = lookup[id]?.possible_rewards?.[0]?.reward?.amount;
+                  if (typeof amount === 'number') optionMilitary += amount;
+                } else if (id.startsWith('era_unit#')) {
+                  const amount = parseInt(id.split('#')[3] ?? '0', 10);
+                  if (amount > 0) optionMilitary += amount;
+                }
+              }
+              if (optionMilitary > maxMilitary) maxMilitary = optionMilitary;
+            }
+            if (maxMilitary > 0) {
+              MilitaryUnitsAccounted.add(buildingId);
+              City.MilitaryUnits += maxMilitary * placedCount;
+              console.debug('[MilUnits] storage components', buildingId, 'x' + placedCount, '+' + (maxMilitary * placedCount), '=', City.MilitaryUnits);
+            }
+          }
+        }
+      }
+      setMilitaryUnitsText();
     } else if (key == 'tool') {
       if (value.language != 'auto') {
         language = value.language;
@@ -2061,6 +2106,19 @@ function rewardObserve() {
   }
 }
 
+function accumulateMotivatedUnits(msg: any): void {
+  const placedCount = PlacedBuildingCounts[msg.id] || 0;
+  if (!placedCount) return;
+  const ability = (msg.abilities as any[] | undefined)?.find(
+    (a: any) => a.__class__ === 'RandomUnitOfAgeWhenMotivatedAbility',
+  );
+  if (ability?.amount) {
+    City.MilitaryUnits += ability.amount * placedCount;
+    console.debug('[MilUnits] late motivated', msg.id, 'x' + placedCount, '+' + (ability.amount * placedCount), '=', City.MilitaryUnits);
+    setMilitaryUnitsText();
+  }
+}
+
 function extractBuildingBoostHints(msg: any): void {
   const components = msg.components;
   if (!components || typeof components !== 'object') return;
@@ -2094,6 +2152,15 @@ function extractBuildingBoostHints(msg: any): void {
     }
     if (maxMilitary > 0) {
       hints.push({ type: 'military_unit_production', value: maxMilitary, targetedFeature: 'all' });
+      if (era === MyInfo.era && !MilitaryUnitsAccounted.has(msg.id)) {
+        const placedCount = PlacedBuildingCounts[msg.id] || 0;
+        if (placedCount > 0) {
+          MilitaryUnitsAccounted.add(msg.id);
+          City.MilitaryUnits += maxMilitary * placedCount;
+          console.debug('[MilUnits] network components', msg.id, 'x' + placedCount, '+' + (maxMilitary * placedCount), '=', City.MilitaryUnits);
+          setMilitaryUnitsText();
+        }
+      }
     }
 
     if (hints.length) {
@@ -2131,6 +2198,7 @@ function processMetadataEntry(msg) {
     }
     CityEntityDefs[msg.id] = msg;
     extractBuildingBoostHints(msg);
+    accumulateMotivatedUnits(msg);
   } else if (msg.__class__ && msg.__class__ == 'GenericCityEntity') {
     if (!CityEntityDefs[msg.id]) {
       CityEntityDefs[msg.id] = {
@@ -2142,6 +2210,7 @@ function processMetadataEntry(msg) {
     }
     CityEntityDefs[msg.id] = msg;
     extractBuildingBoostHints(msg);
+    accumulateMotivatedUnits(msg);
   } else if (msg.__class__ && msg.__class__ == 'UnitType') {
     MilitaryDefs[msg.unitTypeId] = {
       name: msg.name,
@@ -2164,10 +2233,10 @@ function processMetadataEntry(msg) {
     if (msg.id == 'W_MultiAge_WIN22A11b') {
       console.info(msg.name, msg);
     }
-  } else if (!msg.__class__) {
+  } else if (!msg.__class__ || msg.__class__ == 'StaticData') {
     return;
   } else {
-    console.debug(msg.name, msg);
+    // console.debug(msg.name, msg);
   }
 }
 

@@ -155,7 +155,7 @@ const GOODS_LABELS: Record<string, string> = {
   te: 'Tomorrow', fe: 'Future', af: 'Arctic Future',
   of: 'Oceanic Future', vf: 'Virtual Future',
   sam: 'SA Mars', saab: 'SA Asteroid Belt', sav: 'SA Venus',
-  sajm: 'SA Jovian Moon', sat: 'SA Titan', sash: 'SA Saturn Hub',
+  sajm: 'SA Jupiter Moon', sat: 'SA Titan', sash: 'SA Space Hub',
 };
 
 const fmt = (value: unknown): string => {

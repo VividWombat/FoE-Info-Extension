@@ -45,7 +45,7 @@ export var City = {
   ArcBonus: 90,
   ChatBonus: 0,
   ForgePoints: 0,
-  TrazUnits: 0,
+  MilitaryUnits: 0,
   Coins: 0,
   CoinBoost: 0,
   SupplyBoost: 0,
@@ -72,6 +72,9 @@ export var City = {
   tGE: 0,
 };
 
+export var PlacedBuildingCounts: Record<string, number> = {};
+export var MilitaryUnitsAccounted: Set<string> = new Set();
+
 var tooltipHTML = {
   goods: [],
   totalGoods: [],
@@ -92,6 +95,7 @@ var buildingsReady = [];
 var fpBuildings = [];
 var goodsBuildings = [];
 var clanGoodsBuildings = [];
+export var fpProductionBoost = 0;
 
 export function startupService(msg) {
   // console.debug('parsed:', parsed);
@@ -112,6 +116,9 @@ export function startupService(msg) {
   );
   helper.setMyGuildPermissions(user.clan_permissions);
   clearArmyUnits();
+  City.MilitaryUnits = 0;
+  PlacedBuildingCounts = {};
+  MilitaryUnitsAccounted = new Set();
   Galaxy.bonus = [];
   // Galaxy.amount = 0;
   buildingsReady = [];
@@ -165,6 +172,15 @@ export function startupService(msg) {
       //         console.debug(mapID);
       // }
       // console.debug(mapID.cityentity_id,mapID,);
+      PlacedBuildingCounts[mapID.cityentity_id] = (PlacedBuildingCounts[mapID.cityentity_id] || 0) + 1;
+      const _def = CityEntityDefs[mapID.cityentity_id];
+      const _motivatedAbility = _def?.abilities?.find(
+        (a: any) => a.__class__ === 'RandomUnitOfAgeWhenMotivatedAbility',
+      );
+      if (_motivatedAbility?.amount) {
+        City.MilitaryUnits += _motivatedAbility.amount;
+        console.debug('[MilUnits] motivated', mapID.cityentity_id, '+' + _motivatedAbility.amount, '=', City.MilitaryUnits);
+      }
       var forgePoints = 0;
       var found = null; // this IS used
       // console.debug('mapID: ', mapID);
@@ -183,18 +199,6 @@ export function startupService(msg) {
           // console.debug(entity.name, entity);
           // if(mapID.state.is_motivated)
           // SOKmot++;
-          if (
-            entity &&
-            entity.abilities &&
-            entity.abilities.find(
-              (id) => id.__class__ == 'RandomUnitOfAgeWhenMotivatedAbility',
-            )
-          ) {
-            City.TrazUnits += entity.abilities.find(
-              (id) => id.__class__ == 'RandomUnitOfAgeWhenMotivatedAbility',
-            ).amount;
-            // console.debug(entity.name, entity.abilities.find(id => id.__class__ == 'RandomUnitOfAgeWhenMotivatedAbility').amount);
-          }
           if (
             entity &&
             entity.abilities &&
@@ -453,7 +457,8 @@ export function startupService(msg) {
           // console.debug('clanPower: ', clanPower);
         }
         if (mapID.state.current_product.asset_name == 'penal_unit') {
-          City.TrazUnits += mapID.state.current_product.amount;
+          City.MilitaryUnits += mapID.state.current_product.amount;
+          console.debug('[MilUnits] penal_unit(current)', mapID.cityentity_id, '+' + mapID.state.current_product.amount, '=', City.MilitaryUnits);
         }
       }
 
@@ -550,7 +555,7 @@ export function startupService(msg) {
         if (mapID.state.productionOption.products.length > 0) {
           if (DEV && checkDebug()) console.debug(mapID.state.productionOption);
           mapID.state.productionOption.products.forEach((product) => {
-            console.debug(product);
+            // console.debug(product);
             if (
               product.hasOwnProperty('playerResources') &&
               product.playerResources.hasOwnProperty('resources')
@@ -660,14 +665,15 @@ export function startupService(msg) {
             });
           }
           // buildingsReady.push({'name': helper.fEntityNameTrim(mapID.cityentity_id),'ready': mapID.state.next_state_transition_at});
-          console.debug(fEntityName(mapID.cityentity_id), mapID, Galaxy.bonus);
+          // console.debug(fEntityName(mapID.cityentity_id), mapID, Galaxy.bonus);
         }
         if (mapID.state.productionOption.clan_power) {
           clanPower += mapID.state.productionOption.clan_power;
           // console.debug('clanPower: ', clanPower);
         }
         if (mapID.state.productionOption.asset_name == 'penal_unit') {
-          City.TrazUnits += mapID.state.productionOption.amount;
+          City.MilitaryUnits += mapID.state.productionOption.amount;
+          console.debug('[MilUnits] penal_unit(option)', mapID.cityentity_id, '+' + mapID.state.productionOption.amount, '=', City.MilitaryUnits);
         }
       }
 
@@ -682,11 +688,12 @@ export function startupService(msg) {
               const products = opt.array || opt.products || [];
               products.forEach((product) => {
                 if (product.type === 'unit') {
-                  City.TrazUnits += product.amount || 0;
+                  City.MilitaryUnits += product.amount || 0;
+                  console.debug('[MilUnits] component unit', mapID.cityentity_id, '+' + product.amount, '=', City.MilitaryUnits);
                 } else if (product.type === 'genericReward') {
-                  City.TrazUnits += fGenericRewardUnits(
-                    product.genericReward || product,
-                  );
+                  const _gr = fGenericRewardUnits(product.genericReward || product);
+                  City.MilitaryUnits += _gr;
+                  console.debug('[MilUnits] component genericReward', mapID.cityentity_id, '+' + _gr, '=', City.MilitaryUnits);
                 }
               });
             });
@@ -861,7 +868,7 @@ export function startupService(msg) {
   userTooltipHTML += `</p>`;
   var fpHTML = `<span id="fp" class="pop" data-bs-container="#fp" data-bs-toggle="popover" data-bs-placement="bottom" title="Daily FP" data-bs-content="${
     tooltipHTML.fp
-  }"><span data-i18n="daily">Daily</span>: ${City.ForgePoints ? City.ForgePoints : 0}FP</span>`;
+  }"><span data-i18n="daily">Daily</span>: ${City.ForgePoints ? applyFpProductionBoost() : 0}FP ${fpProductionBoost ? `${fpProductionBoost}%` : ""}</span>`;
   var userHTML = `<strong>${GameOrigin.toUpperCase()} ${
     MyInfo.name
   }</strong><span id="user" class="pop" data-bs-container="#user" data-bs-toggle="popover" data-bs-placement="bottom"
@@ -914,21 +921,17 @@ export function startupService(msg) {
   if (clanGoods) citystatsHTML += `${clanGoodsHTML}<br>`;
   if (clanPower)
     citystatsHTML += `<span data-i18n="guildpower">Guild Power</span>: ${clanPower}<br>`;
-  if (City.TrazUnits)
-    citystatsHTML += `<span data-i18n="army">Army Units</span>: ${City.TrazUnits}<br>`;
+  console.debug('[MilUnits] TOTAL at render:', City.MilitaryUnits, 'PlacedBuildingCounts:', PlacedBuildingCounts);
+  citystatsHTML += `<span data-i18n="army">Army Units</span>: <span id="cityMilitaryUnits">${City.MilitaryUnits}</span><br>`;
   // citystatsHTML += `Army: ${Attack}% Att, ${Defense}% Def City: ${CityAttack}% Att, ${CityDefense}% Def<br>`;
-  citystatsHTML += `<span data-i18n="attackers">Attackers</span>: ${City.Attack}% Att, ${City.Defense}% Def<br>`;
-  citystatsHTML += `<span data-i18n="defenders">Defenders</span>: ${City.CityAttack}% Att, ${City.CityDefense}% Def<br>`;
-  citystatsHTML += `<span data-i18n="gbg-attackers">GBG Attackers</span>: ${
-    City.GBGAttackingAttack + City.Attack
-  }% Att, ${City.GBGAttackingDefense + City.Defense}% Def<br>`;
-  citystatsHTML += `<span data-i18n="gbg-defenders">GBG Defenders</span>: ${City.GBGDefendingAttack + City.CityAttack}% Att, ${City.GBGDefendingDefense + City.CityDefense}% Def<br>`;
-  citystatsHTML += `<span data-i18n="ge-attackers">GE Attackers</span>: ${City.GEAttackingAttack + City.Attack}% Att, ${City.GEAttackingDefense + City.Defense}% Def<br>`;
-  citystatsHTML += `<span data-i18n="ge-defenders">GE Defenders</span>: ${
-    City.GEDefendingAttack + City.CityAttack
-  }% Att, ${City.GEDefendingDefense + City.CityDefense}% Def<br>`;
-  citystatsHTML += `<span data-i18n="qi-attackers">QI Attackers</span>: ${City.QIAttackingAttack}% Att, ${City.QIAttackingDefense}% Def<br>`;
-  citystatsHTML += `<span data-i18n="qi-defenders">QI Defenders</span>: ${City.QIDefendingAttack}% Att, ${City.QIDefendingDefense}% Def<br>`;
+  citystatsHTML += `<span data-i18n="attackers">Attackers</span>: ${Math.round(City.Attack)}% Att, ${Math.round(City.Defense)}% Def<br>`;
+  citystatsHTML += `<span data-i18n="defenders">Defenders</span>: ${Math.round(City.CityAttack)}% Att, ${Math.round(City.CityDefense)}% Def<br>`;
+  citystatsHTML += `<span data-i18n="gbg-attackers">GBG Attackers</span>: ${Math.round(City.GBGAttackingAttack + City.Attack)}% Att, ${Math.round(City.GBGAttackingDefense + City.Defense)}% Def<br>`;
+  citystatsHTML += `<span data-i18n="gbg-defenders">GBG Defenders</span>: ${Math.round(City.GBGDefendingAttack + City.CityAttack)}% Att, ${Math.round(City.GBGDefendingDefense + City.CityDefense)}% Def<br>`;
+  citystatsHTML += `<span data-i18n="ge-attackers">GE Attackers</span>: ${Math.round(City.GEAttackingAttack + City.Attack)}% Att, ${Math.round(City.GEAttackingDefense + City.Defense)}% Def<br>`;
+  citystatsHTML += `<span data-i18n="ge-defenders">GE Defenders</span>: ${Math.round(City.GEDefendingAttack + City.CityAttack)}% Att, ${Math.round(City.GEDefendingDefense + City.CityDefense)}% Def<br>`;
+  citystatsHTML += `<span data-i18n="qi-attackers">QI Attackers</span>: ${Math.round(City.QIAttackingAttack)}% Att, ${Math.round(City.QIAttackingDefense)}% Def<br>`;
+  citystatsHTML += `<span data-i18n="qi-defenders">QI Defenders</span>: ${Math.round(City.QIDefendingAttack)}% Att, ${Math.round(City.QIDefendingDefense)}% Def<br>`;
   citystatsHTML += `<span data-i18n="available">Available FP</span>: <span id="availableFPID">${
     availablePacksFP + availableFP
   }</span></p>`;
@@ -983,6 +986,11 @@ export function startupService(msg) {
   // console.debug('tooltipHTML:',tooltipHTML);
 }
 
+export function setMilitaryUnitsText() {
+  const el = document.getElementById('cityMilitaryUnits');
+  if (el) el.textContent = String(City.MilitaryUnits);
+}
+
 export function emissaryService(msg) {
   if (DEV && checkDebug()) {
     console.debug('msg:', msg);
@@ -1004,7 +1012,9 @@ export function emissaryService(msg) {
         beta.innerHTML += `Emissary ${msg.responseData[j].bonus.amount}FP Total: ${City.ForgePoints}FP<br>`;
     } else if (msg.responseData[j].bonus.type == 'unit') {
       // console.debug('Emissary unit',msg.responseData[j].bonus.amount,msg.responseData[j].bonus.name);
-      City.TrazUnits += msg.responseData[j].bonus.amount;
+      City.MilitaryUnits += msg.responseData[j].bonus.amount;
+      console.debug("MilitaryUnits", City.MilitaryUnits);
+      setMilitaryUnitsText();
       if (DEV && checkDebug())
         beta.innerHTML += `Emissary ${msg.responseData[j].bonus.amount} ${msg.responseData[j].bonus.name}<br>`;
     }
@@ -1050,11 +1060,11 @@ export function boostService(msg) {
 }
 
 function accumulateBoosts(boosts: any[]): void {
-  let fpProductionBoost = 0;
+  console.debug('fpProductionBoost:', fpProductionBoost);
   for (let j = 0; j < boosts.length; j++) {
     const b = boosts[j];
     if (b.type == 'coin_production') City.CoinBoost += b.value;
-    else if (b.type == 'forge_points_production') fpProductionBoost += b.value;
+    else if (b.type == 'forge_points_production') {fpProductionBoost += b.value;console.debug('fpProductionBoost:', fpProductionBoost);}
     else if (b.type == 'att_boost_attacker') {
       if (b.targetedFeature == 'all') City.Attack += b.value;
       else if (b.targetedFeature == 'battleground') City.GBGAttackingAttack += b.value;
@@ -1101,11 +1111,17 @@ function accumulateBoosts(boosts: any[]): void {
       b.type != 'construction_time' &&
       b.type != 'recruitment_time'
     )
-      console.debug('other boost:', b.type, b);
+      {
+        // console.debug('other boost:', b.type, b);
+      }
   }
+}
+
+export function applyFpProductionBoost() {
   if (fpProductionBoost && City.ForgePoints) {
-    City.ForgePoints += Math.round((City.ForgePoints * fpProductionBoost) / 100);
+    return City.ForgePoints + Math.round((City.ForgePoints * fpProductionBoost) / 100);
   }
+  return City.ForgePoints
 }
 
 export function boostServiceAllBoosts(msg: any) {
