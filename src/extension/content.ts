@@ -1,3 +1,5 @@
+import browser from 'webextension-polyfill';
+
 type HudGoodsEntry = { k: string; v: number };
 
 type HudPayload = {
@@ -665,7 +667,7 @@ const init = () => {
 };
 
 // Initialise only when the user has opted in (default: off).
-chrome.storage.local.get('tool', (result: any) => {
+browser.storage.local.get('tool').then((result: any) => {
   if (!result?.tool?.showHud) return;
 
   installInPageSniffer();
@@ -676,15 +678,13 @@ chrome.storage.local.get('tool', (result: any) => {
     init();
   }
 
-  if (chrome.runtime?.onMessage) {
-    chrome.runtime.onMessage.addListener((message: any) => {
-      if (message?.type === 'foe-info-hud:update') {
-        Object.assign(
-          snifferState,
-          mergePayload(snifferState, (message.payload || {}) as HudPayload),
-        );
-        updateOverlay(snifferState);
-      }
-    });
-  }
+  browser.runtime.onMessage.addListener((message: any) => {
+    if (message?.type === 'foe-info-hud:update') {
+      Object.assign(
+        snifferState,
+        mergePayload(snifferState, (message.payload || {}) as HudPayload),
+      );
+      updateOverlay(snifferState);
+    }
+  });
 });

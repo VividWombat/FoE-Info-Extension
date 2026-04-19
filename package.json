@@ -24,6 +24,7 @@
     "format": "prettier --write .",
     "dev": "set NODE_ENV=development && webpack --mode development --config webpack-dev.config.js --watch",
     "build-foe-info": "webpack --config foe-info-webstore.config.js",
+    "build-firefox": "webpack --config foe-info-firefox.config.js",
     "test:handlers": "vitest run tests/handlers",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },

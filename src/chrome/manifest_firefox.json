@@ -6,11 +6,13 @@
   "short_name": "",
   "version": "",
   "manifest_version": 3,
-  "minimum_chrome_version": "88.0",
   "description": "Essential Info for Forge of Empires addicts",
   "homepage_url": "https://foe-info.github.io/FoE-Info-Docs/",
-  "externally_connectable": {
-    "matches": ["https://*.forgeofempires.com/game/*"]
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "foe-info@foe-info.github.io",
+      "strict_min_version": "109.0"
+    }
   },
   "devtools_page": "devtools.html",
   "options_ui": {
@@ -34,7 +36,7 @@
   "content_scripts": [
     {
       "matches": ["https://*.forgeofempires.com/game/*"],
-      "js": ["content.js"],
+      "js": ["browser-polyfill.js", "content.js"],
       "all_frames": true,
       "run_at": "document_idle"
     }
