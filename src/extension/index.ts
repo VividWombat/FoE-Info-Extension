@@ -101,9 +101,9 @@ import { hudGbSpot } from './services/GreatBuildingsService';
 import { connectWebSocket, disconnectWebSocket } from './services/WebSocketService';
 import setOptions, { showOptions } from './state/showOptions';
 import '../css/main.scss';
-console.debug(toolOptions);
 
 export var debugEnabled = false;
+const dbg = (...args: unknown[]): void => { if (debugEnabled) console.debug(...args); };
 export var availablePacksFP = 0;
 export var PlayerName = '';
 export var PlayerID = 0;
@@ -139,11 +139,8 @@ export var GBselected = {
 
 type GenericRecord = Record<string, unknown>;
 type HeaderLike = { name: string; value?: string };
-// var GBinfo = [];
-// var GBrequest = [];
 var GuildDonations: GenericRecord[] = [];
 var GuildTreasury: GenericRecord[] = [];
-// var GuildTreasuryAnalysis = [];
 export var targetsTopic = 'targets';
 export var targetText = '';
 var GuildsGoods: GenericRecord[] = [];
@@ -215,8 +212,8 @@ export var rewardsCity: GenericRecord[] = [];
 var rewardsOtherPlayer: any[] = [];
 
 var tool = browser.runtime.getManifest();
-console.debug(tool.name);
-console.debug(tool.version);
+dbg(tool.name);
+dbg(tool.version);
 
 type HudGoodsEntry = { k: string; v: number };
 
@@ -346,7 +343,7 @@ const publishHudData = () => {
         // Tab may be unavailable while devtools target is reloading.
       });
   } catch (error) {
-    console.debug('HUD publish skipped', error);
+    dbg('HUD publish skipped', error);
   }
 };
 
@@ -359,23 +356,6 @@ const scheduleHudUpdate = () => {
   }, 140);
 };
 
-// console.debug(typeof $);
-
-// browser.windows.getAll({ populate: true }).then((windows) => {
-// 		for (var i = 0; i < windows.length; ++i) {
-// 			var w = windows[i];
-// 			for (var j = 0; j < w.tabs.length; ++j) {
-// 				var t = w.tabs[j];
-// 				console.debug(w, t);
-// 			}
-
-// 		}
-// 	});
-
-// $.i18n().load( {
-// 	en: 'i18n/en.json',
-// 	// el: "i18n/el.json"
-// 		} ).done( function() { console.debug('i18n.load OK') } );
 export var darkMode = browser.devtools.panels.themeName;
 const panelParams = new URLSearchParams(window.location.search);
 export var uiMode: 'classic' | 'traditional' = 'classic';
@@ -428,31 +408,12 @@ browser.storage.local.get('tool').then((result: any) => {
   applyThemePreference(result?.tool?.theme);
   applyDesignPreview(!!result?.tool?.designPreview);
 });
-// if (window.matchMedia &&
-//     window.matchMedia('(prefers-color-scheme: dark)').matches) {
-// //   img.style.filter="invert(100%)";
-// 		console.debug('dark mode',window.matchMedia('(prefers-color-scheme: dark)').matches);
-// 		// darkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
-// }
 console.info('themeName', browser.devtools.panels.themeName);
 var title = document.createElement('div');
 document.body.appendChild(title);
 title.id = 'title';
 title.className = 'd-flex flex-row justify-content-between';
 title.classList.add('panel-title');
-
-// <div class="p-2"><img src="${./src/icons/Icon24.png}" /></div>
-{
-  /* <svg id="go-to-options" viewBox="0 0 16 16" width="16px" height="16px"><use xlink:href="${bootstrap-icons/icons/tools.svg#tools}"/></svg> */
-}
-// title.innerHTML =  `<div class="d-flex flex-row justify-content-between">
-// <div class="p-2"><img src="${./src/icons/Icon24.png}" /></div>
-// <div class="p-8">
-// 	<h6>EXT_NAME-dev</h6>
-// </div>
-// <div class="p-2">
-// </div>
-// </div>`;
 
 var newelement: HTMLElement = document.body;
 newelement.classList.add('bootstrap-styles');
@@ -483,11 +444,6 @@ if (DEV) {
 newelement = document.createElement('div');
 newelement.innerHTML = `<span class="material-icons-outlined md-18 options-icon">settings</span>`;
 newelement.classList.toggle('p-2');
-// newelement.className = "p-2";
-// child = document.createElement("img");
-var svgNS = 'http://www.w3.org/2000/svg';
-// child = document.createElementNS(svgNS,"svg");
-// child = document.createElement("div");
 newelement.id = 'go-to-options';
 
 title.appendChild(newelement);
@@ -610,56 +566,7 @@ modal.id = 'modal';
 var modalElement = document.createElement('div');
 modalElement.className = 'modal-dialog modal-sm';
 modalElement.id = 'testModal';
-// newelement.innerHTML = '<div class="modal-dialog modal-sm">...</div>';
 modal.appendChild(modalElement);
-
-console.debug('clipboard', clipboard.innerHTML);
-if (showOptions.clipboard) {
-  console.debug('clipboard', clipboard.innerHTML);
-  // var clipboard = document.getElementById("clipboard");
-
-  // if( clipboard == null){
-  // 	// console.debug('2');
-  // 	clipboard = document.createElement('div');
-  // 	var content = document.getElementById("content");
-  // 	content.appendChild(clipboard);
-  //  }
-
-  var clipboardHTML = `<div class="alert alert-success alert-dismissible show collapsed"><p id="clipboardTextLabel" href="#buildingsText" data-bs-toggle="collapse">
-	${element.icon('clipboardicon', 'clipboardText', collapse.collapseClipboard)}
-	<strong><span data-i18n="clipboard">Clipboard</span>:</strong></p>`;
-  clipboardHTML += element.close();
-  clipboardHTML += element.copy(
-    'clipboardCopyID',
-    'warning',
-    'right',
-    collapse.collapseClipboard,
-  );
-  clipboardHTML += `<div id="clipboardText" class="resize collapse ${collapse.collapseClipboard ? '' : 'show'}"><p>`;
-
-  // clipboard.innerHTML = clipboardHTML +`</p></div></div>`;
-  // document.getElementById("clipboardTextLabel").addEventListener("click", collapse.fCollapseClipboard);
-  // document.getElementById("clipboardCopyID").addEventListener("click", copy.fClipboardCopy);
-  // console.debug('clipboard',clipboard.innerHTML);
-}
-
-// other player city info
-// cultural settlements
-// incidents
-// rewards
-// gbg rewards
-// gb donation
-// gb info
-// army info
-// GvG panel
-// GBG Targets
-// GBG panel
-// GE panel
-// Treasury info
-
-// var newDiv = document.createElement("div");
-// cityincidents.innerHTML = "This is a new div.";
-// content.appendChild(newDiv);
 
 const getType = (type: string) => {
   return type.replace(/.*(javascript|image|html|font|json|css|text).*/g, '$1');
@@ -710,7 +617,7 @@ const parseMetadataPayload = async (
       bodyStart === '[';
 
     if (!looksLikeJson) {
-      console.debug('Skipping non-JSON metadata', metadataUrl, contentType);
+      dbg('Skipping non-JSON metadata', metadataUrl, contentType);
       return null;
     }
 
@@ -807,40 +714,32 @@ const getTotalAvailableFP = () => {
 };
 
 document.querySelector('#go-to-options')?.addEventListener('click', function () {
-  // console.debug('options');
-
   browser.permissions
     .request({
       permissions: ['storage'] as unknown as any,
     })
     .then((granted) => {
-      // The callback argument will be true if the user granted the permissions.
       if (granted) {
-        //   doSomething();
         if (browser.runtime.openOptionsPage) {
           browser.runtime.openOptionsPage();
         } else {
           window.open(browser.runtime.getURL('options.html'));
         }
-      } else {
-        //   doSomethingElse();
       }
     });
 });
 
 export var language =
   window.navigator.language;
-console.debug(language);
+dbg(language);
 if (process.env.NODE_ENV === 'development') {
   $.i18n.debug = true;
-  // language =
-  // console.debug(window);
 }
 
 window.addEventListener(
   'message',
   function (event) {
-    console.debug('received response:  ', event.data);
+    dbg('received response:  ', event.data);
   },
   false,
 );
@@ -853,43 +752,29 @@ window
     }
   });
 function onEvent(message: unknown, params: unknown) {
-  console.debug(message, params);
+  dbg(message, params);
 }
 
-// browser.storage.local.clear();
 browser.permissions
   .contains({
     permissions: ['storage'],
   })
   .then((result) => {
-    // if(checkBeta())
-    // console.debug(result);
     if (result) {
-      // The extension has the permissions.
-      // browser.storage.local.get(null, function(items) {
-      // 	console.debug(items);
-      // });
-      // browser.storage.local.clear();
-
       browser.storage.local.getBytesInUse(null).then((size) => {
-        console.debug('getBytesInUse', size);
+        dbg('getBytesInUse', size);
       });
 
-      // browser.storage.local.get(['showOptions','collapseOptions','CityEntityDefs','tool','targets','toolOptions','donationPercent','url'],
       browser.storage.local.get(null).then((result) => {
-        // console.debug('result', result);
         receiveStorage(result);
         if (language != 'auto') {
           $.i18n({
             locale: language,
           });
         }
-        console.debug(language, $.i18n().locale, $.i18n.debug);
+        dbg(language, $.i18n().locale, $.i18n.debug);
         $.i18n()
           .load({
-            //     'fr' : {
-            //         'load' : 'Chargez le jeu pour voir les statistiques de votre ville'
-            // },
             de: {
               load: 'Laden Sie das Spiel, um Ihre Stadtstatistiken anzuzeigen',
             },
@@ -922,14 +807,13 @@ browser.permissions
             it: 'i18n/it.json',
           })
           .done(function () {
-            // load lang strings on page already loaded
             $('body').i18n();
-            console.debug(
+            dbg(
               'jQuery ' +
                 (typeof jQuery !== 'undefined' ? $().jquery : 'NOT') +
                 ' loaded',
             );
-            console.debug('i18n.load OK');
+            dbg('i18n.load OK');
           });
       });
     } else {
@@ -940,27 +824,19 @@ browser.permissions
       document
         .getElementById('enableFoE')!
         .addEventListener('click', function () {
-          // console.debug('options');
-
           browser.permissions
             .request({
               permissions: ['storage', 'clipboardWrite'] as unknown as any,
             })
             .then((granted) => {
-              // The callback argument will be true if the user granted the permissions.
               if (granted) {
-                //   doSomething();
                 citystats.innerHTML = `<div class="alert alert-danger"><p><strong>Now Load The Game !</strong></div>`;
-              } else {
-                //   doSomethingElse();
               }
             });
         });
       return;
     }
   });
-
-// console.debug(showOptions);
 
 browser.devtools.network.onRequestFinished.addListener(handleRequestFinished);
 
@@ -1004,17 +880,8 @@ function handleWebSocketMessage(msg: import('./services/types').HandlerMessage):
   // Additional handlers can be chained here as new WS services are discovered.
 }
 
-// When a network request has finished this function will be called.
-// browser.devtools.network.onRequestFinished.addListener().then(request => {
 function handleRequestFinished(request: any) {
-  // console.log("Server IP: ", request.serverIPAddress);
-
   const response = request.response;
-  if (request._resourceType == 'websocket') {
-    console.debug('request', request._resourceType, request, response);
-  }
-  // console.debug('request',request);
-  // console.debug('response',response);
   var contentType = '';
   let contentHeader: HeaderLike | undefined;
 
@@ -1031,7 +898,6 @@ function handleRequestFinished(request: any) {
     contentType = getType(contentHeader.value);
   }
 
-  // if (contentType == "json") {
   if (
     request.request.url.match(
       /https:\/\/.*\.forgeofempires\.com\/game\/json\?h=/g,
@@ -1040,16 +906,9 @@ function handleRequestFinished(request: any) {
       /https:\/\/foe.*\.innogamescdn\.com\/start\/metadata\?id=(.*)/g,
     )
   ) {
-    // console.debug(request.request.headers);
     const clientIdentificationHeader = request.request.headers.find(
       (header: HeaderLike) => header.name === 'client-identification',
     );
-    // if(contentType) console.debug('client-identification:', contentType.value.substr(8,5));
-    // else{
-    // 	contentType = request.request.headers.find(header => header.name === 'Client-Identification')
-    // 	// if(contentType) console.debug('Client-Identification:', contentType.value.substr(8,5));
-
-    // }
 
     if (
       clientIdentificationHeader &&
@@ -1058,18 +917,14 @@ function handleRequestFinished(request: any) {
     ) {
       GameVersion = clientIdentificationHeader.value.substr(8, 5);
       citystats.innerHTML += `<div><span data-i18n="gameversion">Game Version</span>: ${GameVersion}<br>${EXT_NAME}: ${tool.version}</div>`;
-      // console.debug('version:', GameVersion);
     }
 
     request.getContent().then(async ([body, mimeType]: [string, string]) => {
-      // console.log("Content: ", body);
-      // console.log("MIME type: ", mimeType);
       const parsed = safeJsonParse(body, 'network response body');
       if (parsed == null) {
         return;
       }
       const parsedMessages = toRecordArray(parsed);
-      // console.debug('parsed:', parsed);
       if (parsedMessages.length) {
         for (var i = 0; i < parsedMessages.length; i++) {
           const msg = parsedMessages[i];
@@ -1077,8 +932,6 @@ function handleRequestFinished(request: any) {
             typeof msg.requestClass === 'string' ? msg.requestClass : '';
           const requestMethod =
             typeof msg.requestMethod === 'string' ? msg.requestMethod : '';
-
-          // console.debug('msg', msg);
 
           // check if this is static data service info that holds all URLs to all metadata files
           if (
@@ -1266,8 +1119,6 @@ function handleRequestFinished(request: any) {
             msg.requestClass == 'CityProductionService' &&
             msg.requestMethod == 'pickupProduction'
           ) {
-            /*pickupProduction */
-            //console.debug('cityentity_id:', msg.responseData.cityentity_id);
             pickupProduction(msg);
           } else if (
             msg.requestClass == 'BlueprintService' &&
@@ -1311,7 +1162,7 @@ function handleRequestFinished(request: any) {
                 grantIndependence,
               })
             ) {
-              console.debug('ClanBattleService', msg);
+              dbg('ClanBattleService', msg);
             }
           } else if (msg.requestClass == 'GuildExpeditionService') {
             if (
@@ -1324,7 +1175,7 @@ function handleRequestFinished(request: any) {
                 showReward,
               })
             ) {
-              console.debug('GuildExpeditionService', msg);
+              dbg('GuildExpeditionService', msg);
             }
           } else if (
             handleGuildBattlegroundRequest(msg, {
@@ -1339,7 +1190,6 @@ function handleRequestFinished(request: any) {
           ) {
             // handled in module
           } else if (msg.requestClass == 'GuildBattlegroundSignalsService') {
-            // GuildBattleground
             if (
               !handleGuildBattlegroundSignalsRequest(
                 msg,
@@ -1347,9 +1197,8 @@ function handleRequestFinished(request: any) {
                 safeJsonParse,
               )
             ) {
-              console.debug('GuildBattlegroundSignalsService', msg);
+              dbg('GuildBattlegroundSignalsService', msg);
             }
-            // console.debug("GuildBattlegroundSignalsService", msg,JSON.parse(request.request.postData.text));
           } else if (
             msg.__class__ &&
             msg.__class__.substring(0, 17) == 'GuildBattleground'
@@ -1364,32 +1213,24 @@ function handleRequestFinished(request: any) {
               } else if (msg.id == 'waterfall_archipelago') {
                 WaterfallProvinceDefs = msg.provinces;
                 WaterfallProvinceDefs[0].id = 0;
-              } else console.debug(msg);
+              } else dbg(msg);
             } else if (
               msg.__class__ &&
               msg.__class__ == 'GuildBattlegroundLeagueMetadata'
             ) {
-              // console.debug('GuildBattlegroundLeagueMetadata',msg);
+              // no action needed for league metadata
             } else if (
               msg.__class__ &&
               msg.__class__ == 'GuildBattlegroundBuildingMetadata'
             ) {
-              // console.debug('GuildBattlegroundLeagueMetadata',msg);
               if (!BuildingDefs[msg.id]) {
-                // CityEntityDefs[msg.id] = [];
-                // Object.defineProperty(CityEntityDefs, msg.id, {
-                // 	'name' : msg.name,
-                // 	'abilities' : {},
-                // 	'entity_levels' : {},
-                // 	'available_products' : {},
-                // });
                 BuildingDefs[msg.id] = {
                   name: msg.name,
                   buildingTime: msg.buildingTime,
                   description: msg.description,
                 };
               }
-            } else console.debug('GuildBattleground', msg);
+            } else dbg('GuildBattleground', msg);
           } else if (
             handleClanServiceRequest(msg, {
               showOptions,
@@ -1433,23 +1274,15 @@ function handleRequestFinished(request: any) {
           ) {
             // handled in module
           } else {
-            // output.innerHTML += `<div>*** ${msg.requestClass}</div>`;
             if (msg.requestClass == null) {
               processMetadataEntry(msg);
             }
           }
         }
-        // console.debug(parsed);
-        if (debugEnabled == true) {
-          // output.innerHTML += `<div></div>`;
-          // output.innerHTML += `<div>${body}</div>`;
-          // output.innerHTML += `<div></div>`;
-        }
       } else {
-        // console.debug('parsed:', parsed);
         if (isRecord(parsed) && parsed.player_name && parsed.worlds) {
           worlds = parsed.worlds as any;
-          console.debug('worlds', worlds);
+          dbg('worlds', worlds);
         }
       }
       scheduleHudUpdate();
@@ -1465,47 +1298,34 @@ function storageChange(
 ) {
   for (var key in changes) {
     var storageChange = changes[key];
-    //   console.debug('Storage key "%s" in namespace "%s" changed. ' +
-    // 			  'Old value was "%s", new value is "%s".',
-    // 			  key,
-    // 			  namespace,
-    // 			  storageChange.oldValue,
-    // 			  storageChange.newValue);
     if (key == 'showOptions') setOptions('showOptions', storageChange.newValue);
-    // showOptions = storageChange.newValue;
-    // console.debug(changes);
     else if (key == 'tool') {
       const toolSettings = storageChange.newValue as any;
       if (toolSettings?.language) {
         language = toolSettings.language;
       }
-      console.debug(language);
+      dbg(language);
       applyUiMode(toolSettings?.uiMode);
       applyThemePreference(toolSettings?.theme);
       applyDesignPreview(!!toolSettings?.designPreview);
     } else if (key == 'targets') {
-      // console.debug(storageChange.newValue,targetsTopic);
+      // dbg(storageChange.newValue,targetsTopic);
       targetsTopic = storageChange.newValue;
     } else if (key == 'targetText') {
-      // console.debug(storageChange.newValue,targetText);
+      // dbg(storageChange.newValue,targetText);
       targetText = storageChange.newValue;
     } else if (key == 'toolOptions') {
       setToolOptions(storageChange.newValue);
-      // console.debug(toolOptions);
+      // dbg(toolOptions);
     } else if (key == 'donationPercent') {
       donationPercent = storageChange.newValue;
       setCurrentPercent(storageChange.newValue);
-      // console.debug(storageChange.newValue);
     } else if (key == 'donationSuffix') {
       donationSuffix = storageChange.newValue;
-      // console.debug(storageChange.newValue);
     } else if (key == 'url') {
       url = storageChange.newValue;
-      // console.debug(url);
     }
   }
-  // console.debug('onChanged',changes);
-  // console.debug('showOptions',showOptions);
 }
 
 export function setMyInfo(
@@ -1565,173 +1385,53 @@ export function setPlayerName(name: string | undefined, id: number | undefined) 
   scheduleHudUpdate();
 }
 
+function clearInnerHTML(...elements: Array<HTMLElement | null | undefined>): void {
+  for (const el of elements) {
+    if (el) el.innerHTML = '';
+  }
+}
+
 function fCleardForGVG() {
-  cityinvested.innerHTML = ``;
-  output.innerHTML = ``;
-  overview.innerHTML = ``;
-  alerts.innerHTML = ``;
-  // cityrewards.innerHTML = ``;
-  donationDIV.innerHTML = ``;
-  incidents.innerHTML = ``;
-  donation2DIV.innerHTML = ``;
-  donationDIV2.innerHTML = ``;
-  greatbuilding.innerHTML = ``;
-  guild.innerHTML = ``;
-  debug.innerHTML = ``;
-  info.innerHTML = ``;
-  donationDIV.innerHTML = ``;
-  visitstats.innerHTML = ``;
+  clearInnerHTML(cityinvested, output, overview, alerts, donationDIV, incidents, donation2DIV, donationDIV2, greatbuilding, guild, debug, info, visitstats, cultural, friendsDiv, treasury, treasuryLog);
   visitstats.className = '';
-  cultural.innerHTML = ``;
   cultural.className = '';
-  friendsDiv.innerHTML = '';
-  treasury.innerHTML = '';
-  treasuryLog.innerHTML = '';
 }
 
 function clearVisitPlayer() {
-  cityinvested.innerHTML = ``;
-  output.innerHTML = ``;
-  overview.innerHTML = ``;
-  // cityrewards.innerHTML = ``;
-  donationDIV.innerHTML = ``;
-  donation2DIV.innerHTML = ``;
-  donationDIV2.innerHTML = ``;
-  greatbuilding.innerHTML = ``;
-  guild.innerHTML = ``;
-  debug.innerHTML = ``;
-  info.innerHTML = ``;
-  donationDIV.innerHTML = ``;
-  cultural.innerHTML = ``;
+  clearInnerHTML(cityinvested, output, overview, donationDIV, donation2DIV, donationDIV2, greatbuilding, guild, debug, info, cultural, friendsDiv, treasury, treasuryLog);
   cultural.className = '';
-  friendsDiv.innerHTML = '';
-  treasury.innerHTML = '';
-  treasuryLog.innerHTML = '';
 }
 
 function clearExpedition() {
-  cityinvested.innerHTML = ``;
-  // output.innerHTML = ``;
-  overview.innerHTML = ``;
-  alerts.innerHTML = ``;
-  // cityrewards.innerHTML = ``;
-  donationDIV.innerHTML = ``;
-  incidents.innerHTML = ``;
-  donation2DIV.innerHTML = ``;
-  donationDIV2.innerHTML = ``;
-  greatbuilding.innerHTML = ``;
-  guild.innerHTML = ``;
-  debug.innerHTML = ``;
-  info.innerHTML = ``;
-  donationDIV.innerHTML = ``;
-  visitstats.innerHTML = ``;
+  clearInnerHTML(cityinvested, overview, alerts, donationDIV, incidents, donation2DIV, donationDIV2, greatbuilding, guild, debug, info, visitstats, cultural, friendsDiv, gvg, treasury, treasuryLog, gvgSummary, gvgAges);
   visitstats.className = '';
-  cultural.innerHTML = ``;
   cultural.className = '';
-  friendsDiv.innerHTML = '';
-  gvg.innerHTML = ``;
   gvg.className = '';
-  // armyDIV.innerHTML = ``;
-  treasury.innerHTML = '';
-  treasuryLog.innerHTML = '';
-  if (gvgSummary) gvgSummary.innerHTML = '';
-  if (gvgAges) gvgAges.innerHTML = '';
 }
 
 function clearForBattleground() {
-  cityinvested.innerHTML = ``;
-  // output.innerHTML = ``;
-  overview.innerHTML = ``;
-  alerts.innerHTML = ``;
-  // cityrewards.innerHTML = ``;
-  donationDIV.innerHTML = ``;
-  incidents.innerHTML = ``;
-  donation2DIV.innerHTML = ``;
-  donationDIV2.innerHTML = ``;
-  greatbuilding.innerHTML = ``;
-  guild.innerHTML = ``;
-  debug.innerHTML = ``;
-  info.innerHTML = ``;
-  donationDIV.innerHTML = ``;
-  visitstats.innerHTML = ``;
+  clearInnerHTML(cityinvested, overview, alerts, donationDIV, incidents, donation2DIV, donationDIV2, greatbuilding, guild, debug, info, visitstats, cultural, friendsDiv, gvg, treasury, treasuryLog, gvgSummary, gvgAges);
   visitstats.className = '';
-  cultural.innerHTML = ``;
   cultural.className = '';
-  friendsDiv.innerHTML = '';
-  gvg.innerHTML = ``;
   gvg.className = '';
-  // armyDIV.innerHTML = ``;
-  treasury.innerHTML = '';
-  treasuryLog.innerHTML = '';
-  if (gvgSummary) gvgSummary.innerHTML = '';
-  if (gvgAges) gvgAges.innerHTML = '';
 }
 
 function clearForMainCity() {
-  // output.innerHTML = ``;
-  // cityrewards.innerHTML = ``;
-  incidents.innerHTML = ``;
-  donation2DIV.innerHTML = ``;
-  donationDIV2.innerHTML = ``;
-  greatbuilding.innerHTML = ``;
-  targets.innerHTML = ``;
-  guild.innerHTML = ``;
-  debug.innerHTML = ``;
-  info.innerHTML = ``;
-  donationDIV.innerHTML = ``;
-  visitstats.innerHTML = ``;
+  clearInnerHTML(incidents, donation2DIV, donationDIV2, greatbuilding, targets, guild, debug, info, donationDIV, visitstats, cultural, gvg, treasury, treasuryLog, gvgSummary, gvgAges);
   visitstats.className = '';
-  cultural.innerHTML = ``;
   cultural.className = '';
-  gvg.innerHTML = ``;
   gvg.className = '';
-  // armyDIV.innerHTML = ``;
-  treasury.innerHTML = '';
-  treasuryLog.innerHTML = '';
-  if (gvgSummary) gvgSummary.innerHTML = '';
-  if (gvgAges) gvgAges.innerHTML = '';
 }
 
 function clearStartup() {
-  cityinvested.innerHTML = ``;
-  output.innerHTML = ``;
-  overview.innerHTML = ``;
-  alerts.innerHTML = ``;
-  cityrewards.innerHTML = ``;
-  donationDIV.innerHTML = ``;
-  incidents.innerHTML = ``;
-  donation2DIV.innerHTML = ``;
-  donationDIV2.innerHTML = ``;
-  greatbuilding.innerHTML = ``;
-  guild.innerHTML = ``;
-  debug.innerHTML = ``;
-  info.innerHTML = ``;
-  citystats.innerHTML = ``;
-  donationDIV.innerHTML = ``;
-  visitstats.innerHTML = ``;
+  clearInnerHTML(cityinvested, output, overview, alerts, cityrewards, donationDIV, incidents, donation2DIV, donationDIV2, greatbuilding, guild, debug, info, citystats, visitstats, cultural, friendsDiv, gvg, armyDIV, treasury, treasuryLog, gvgSummary, gvgAges);
   visitstats.className = '';
-  cultural.innerHTML = ``;
   cultural.className = '';
-  friendsDiv.innerHTML = '';
-  gvg.innerHTML = ``;
   gvg.className = '';
-  armyDIV.innerHTML = ``;
-  treasury.innerHTML = '';
-  treasuryLog.innerHTML = '';
-  if (gvgSummary) gvgSummary.innerHTML = '';
-  if (gvgAges) gvgAges.innerHTML = '';
   GuildDonations = [];
   GuildTreasury = [];
-  //  ResourceDefs = [];
-  //  PowerSoH = [];
-  // PowerHoF = [];
   GuildsGoods = [];
-  Bonus = {
-    aid: 0,
-    spoils: 0,
-    diplomatic: 0,
-    strike: 0,
-  };
+  Bonus = { aid: 0, spoils: 0, diplomatic: 0, strike: 0 };
   rewardsGE = [];
   rewardsGBG = [];
   rewardsGeneric = [];
@@ -1741,59 +1441,23 @@ function clearStartup() {
 }
 
 function clearCultural() {
-  cityinvested.innerHTML = ``;
-  // output.innerHTML = ``;
-  overview.innerHTML = ``;
-  // cityrewards.innerHTML = ``;
-  donationDIV.innerHTML = ``;
-  incidents.innerHTML = ``;
-  donation2DIV.innerHTML = ``;
-  donationDIV2.innerHTML = ``;
-  greatbuilding.innerHTML = ``;
-  guild.innerHTML = ``;
-  debug.innerHTML = ``;
-  info.innerHTML = ``;
-  donationDIV.innerHTML = ``;
-  visitstats.innerHTML = ``;
+  clearInnerHTML(cityinvested, overview, donationDIV, incidents, donation2DIV, donationDIV2, greatbuilding, guild, debug, info, visitstats, friendsDiv, gvg, armyDIV, treasury, treasuryLog, gvgSummary, gvgAges);
   visitstats.className = '';
-  friendsDiv.innerHTML = '';
-  gvg.innerHTML = ``;
   gvg.className = '';
-  armyDIV.innerHTML = ``;
-  treasury.innerHTML = '';
-  treasuryLog.innerHTML = '';
-  if (gvgSummary) gvgSummary.innerHTML = '';
-  if (gvgAges) gvgAges.innerHTML = '';
 }
 
 function receiveStorage(result) {
-  console.debug('result', result);
-
-  // // console.debug('showIncidents', showIncidents);
-  // else
-  // 	storage.set('showOptions',showOptions);
-  // if(result.collapseOptions){
-  // 	// console.debug('result', result,collapseOptions);
-  // 	// collapseOptions = result.collapseOptions;
-  // 	collapseOptions('collapseOptions',result.collapseOptions);
-  // }
-  // console.debug('result', result);
+  dbg('result', result);
   Object.entries(result).forEach((element) => {
-    // if(element.toString)
-    // console.debug(element);
     const [key, value] = element;
-    // console.debug(key,value,key.substring(0,8));
     if (key.substring(0, 8) == 'collapse') {
-      // console.debug(key,value);
       collapseOptions(key, value);
     } else if (key == 'showOptions') setOptions('showOptions', value);
     else if (key == ResourceDefs) {
-      // if(key == ResourceDefs)
       setResourceDefs(value);
     } else if (key == 'CityEntityDefs') {
-      // if(key == CityEntityDefs)
       CityEntityDefs = value;
-      console.debug(key, value);
+      dbg(key, value);
       for (const [buildingId, def] of Object.entries(CityEntityDefs as Record<string, any>)) {
         const placedCount = PlacedBuildingCounts[buildingId] || 0;
         if (!placedCount) continue;
@@ -1804,7 +1468,7 @@ function receiveStorage(result) {
           if (ability?.amount) {
             MilitaryUnitsAccounted.add(buildingId);
             City.MilitaryUnits += ability.amount * placedCount;
-            console.debug('[MilUnits] storage motivated', buildingId, 'x' + placedCount, '+' + (ability.amount * placedCount), '=', City.MilitaryUnits);
+            dbg('[MilUnits] storage motivated', buildingId, 'x' + placedCount, '+' + (ability.amount * placedCount), '=', City.MilitaryUnits);
           }
           const comp = (def?.components as Record<string, any> | undefined)?.[MyInfo.era];
           if (comp) {
@@ -1829,7 +1493,7 @@ function receiveStorage(result) {
             if (maxMilitary > 0) {
               MilitaryUnitsAccounted.add(buildingId);
               City.MilitaryUnits += maxMilitary * placedCount;
-              console.debug('[MilUnits] storage components', buildingId, 'x' + placedCount, '+' + (maxMilitary * placedCount), '=', City.MilitaryUnits);
+              dbg('[MilUnits] storage components', buildingId, 'x' + placedCount, '+' + (maxMilitary * placedCount), '=', City.MilitaryUnits);
             }
           }
         }
@@ -1838,28 +1502,25 @@ function receiveStorage(result) {
     } else if (key == 'tool') {
       if (value.language != 'auto') {
         language = value.language;
-        console.debug(language);
+        dbg(language);
       }
     } else if (key == 'targets') {
       targetsTopic = value;
-      // console.debug(targetsTopic);
+      // dbg(targetsTopic);
     } else if (key == 'targetText') {
       targetText = value;
-      // console.debug(targetText);
+      // dbg(targetText);
     } else if (key == 'toolOptions') {
       setToolOptions(value);
-      // console.debug(toolOptions);
+      // dbg(toolOptions);
     } else if (key == 'donationPercent') {
       donationPercent = value;
       setCurrentPercent(value);
-      // console.debug(value);
     } else if (key == 'donationSuffix') {
       donationSuffix = value;
-      // console.debug(value);
     } else if (key == 'url') {
       url = value;
-      // console.debug(value);
-    } else console.debug(key, value);
+    } else dbg(key, value);
   });
   scheduleHudUpdate();
 }
@@ -1882,35 +1543,30 @@ export function initTreasury(resources) {
           0,
           0,
         ]);
-        // ID, era name, rss name, treasury qty, donation, GE spend, GVG spend, GBG spend, net change
       }
     });
   }
-  console.debug(GuildTreasury);
+  dbg(GuildTreasury);
 }
 
 export function showReward(reward) {
   var rewardId = 'collectRewardText';
   var rewardTitle = '';
-  // var rewards = [];
   var name = helper.fRewardShortName(reward.name);
   var qty = reward.amount;
-  // if((reward.type = 'good' && !reward.subType == 'rogue') || reward.id.includes('goods#each#CurrentEra'))
   if (reward.totalAmount) qty = reward.totalAmount;
   if (reward.source == 'guildExpedition') {
     rewardTitle = 'GE ';
     rewardId = 'collectGERewardText';
     if (!rewardsGE[name]) rewardsGE[name] = 0;
     rewardsGE[name] += qty;
-    console.debug('rewardsGE:', rewardsGE, reward);
-    // rewards = rewardsGE;
+    dbg('rewardsGE:', rewardsGE, reward);
   } else if (reward.source == 'battlegrounds_conquest') {
     rewardTitle = 'GBG ';
     rewardId = 'collectGBGRewardText';
     if (!rewardsGBG[name]) rewardsGBG[name] = 0;
     rewardsGBG[name] += qty;
-    console.debug('rewardsGBG:', rewardsGBG, reward);
-    // rewards = rewardsGBG;
+    dbg('rewardsGBG:', rewardsGBG, reward);
   } else if (
     reward.source == 'otherPlayer' ||
     reward.source == 'pickupProduction'
@@ -1923,14 +1579,12 @@ export function showReward(reward) {
       name = helper.fResourceShortName(reward.subType);
     if (!rewardsGeneric[name]) rewardsGeneric[name] = 0;
     rewardsGeneric[name] += qty;
-    console.debug('rewardsGeneric:', rewardsGeneric, reward);
-    // rewards = rewardsGeneric;
+    dbg('rewardsGeneric:', rewardsGeneric, reward);
   }
   var text = '';
   if (Object.keys(rewardsGE).length) {
     text += '<p><em>GE</em><br>';
     Object.keys(rewardsGE).forEach((item) => {
-      // console.debug(item);
       text += `${rewardsGE[item]} ${item}<br>`;
     });
     text += '</p>';
@@ -1938,7 +1592,6 @@ export function showReward(reward) {
   if (Object.keys(rewardsGBG).length) {
     text += '<p><em>GBG</em><br>';
     Object.keys(rewardsGBG).forEach((item) => {
-      // console.debug(item);
       text += `${rewardsGBG[item]} ${item}<br>`;
     });
     text += '</p>';
@@ -1946,7 +1599,6 @@ export function showReward(reward) {
   if (Object.keys(rewardsGeneric).length) {
     text += '<p><em>Event/City</em><br>';
     Object.keys(rewardsGeneric).forEach((item) => {
-      // console.debug(item);
       text += `${rewardsGeneric[item]} ${item}<br>`;
     });
     text += '</p>';
@@ -1954,7 +1606,6 @@ export function showReward(reward) {
   if (Object.keys(rewardsOtherPlayer).length) {
     text += '<p><em>Aid/Plunder</em><br>';
     Object.keys(rewardsOtherPlayer).forEach((item) => {
-      // console.debug(item);
       text += `${rewardsOtherPlayer[item]} ${item}<br>`;
     });
     text += '</p>';
@@ -1962,7 +1613,6 @@ export function showReward(reward) {
   if (Object.keys(rewardsCity).length) {
     text += '<p><em>City</em><br>';
     Object.keys(rewardsCity).forEach((item) => {
-      // console.debug(item);
       text += `${rewardsCity[item]} ${item}<br>`;
     });
     text += '</p>';
@@ -1970,7 +1620,6 @@ export function showReward(reward) {
   if (Object.keys(rewardsArmy).length) {
     text += '<p><em>Army</em><br>';
     Object.keys(rewardsArmy).forEach((item) => {
-      // console.debug(item);
       text += `${rewardsArmy[item]} ${item}<br>`;
     });
     text += '</p>';
@@ -1992,7 +1641,6 @@ export function showReward(reward) {
 export function showRewards(rewards) {
   var rewardTitle = '';
   var text = '';
-  // var rewards = [];
 
   rewards.forEach((reward) => {
     var name = helper.fRewardShortName(reward.name);
@@ -2000,11 +1648,11 @@ export function showRewards(rewards) {
     if (reward.source == 'autoAid') {
       rewardTitle = 'City ';
       if (reward.type == 'resource') {
-        console.debug('autoAid:resource', reward.subType, qty, reward);
+        dbg('autoAid:resource', reward.subType, qty, reward);
         if (rewardsCity[reward.subType]) rewardsCity[reward.subType] += qty;
         else rewardsCity[reward.subType] = qty;
       } else if (reward.type == 'blueprint') {
-        console.debug(
+        dbg(
           'autoAid:resource',
           helper.fGBsname(reward.subType) + ' ' + name,
           qty,
@@ -2018,21 +1666,18 @@ export function showRewards(rewards) {
         else rewardsCity[reward.subType] = qty;
       }
 
-      console.debug('autoAid:', rewardsCity, reward);
-      // rewards = rewardsGE;
+      dbg('autoAid:', rewardsCity, reward);
     } else {
       rewardTitle = 'Other ';
       if (reward.type == 'resource')
         name = helper.fResourceShortName(reward.subType);
       if (!rewardsGeneric[name]) rewardsGeneric[name] = 0;
       rewardsGeneric[name] += qty;
-      console.debug('rewardsGeneric:', rewardsGeneric, reward);
-      // rewards = rewardsGeneric;
+      dbg('rewardsGeneric:', rewardsGeneric, reward);
     }
     if (Object.keys(rewardsGE).length) {
       text += '<p><em>GE</em><br>';
       Object.keys(rewardsGE).forEach((item) => {
-        console.debug(item);
         text += `${rewardsGE[item]} ${item}<br>`;
       });
       text += '</p>';
@@ -2040,7 +1685,6 @@ export function showRewards(rewards) {
     if (Object.keys(rewardsGBG).length) {
       text += '<p><em>GBG</em><br>';
       Object.keys(rewardsGBG).forEach((item) => {
-        console.debug(item);
         text += `${rewardsGBG[item]} ${item}<br>`;
       });
       text += '</p>';
@@ -2048,7 +1692,6 @@ export function showRewards(rewards) {
     if (Object.keys(rewardsGeneric).length) {
       text += '<p><em>Event/City</em><br>';
       Object.keys(rewardsGeneric).forEach((item) => {
-        console.debug(item);
         text += `${rewardsGeneric[item]} ${item}<br>`;
       });
       text += '</p>';
@@ -2056,7 +1699,6 @@ export function showRewards(rewards) {
     if (Object.keys(rewardsOtherPlayer).length) {
       text += '<p><em>Aid/Plunder</em><br>';
       Object.keys(rewardsOtherPlayer).forEach((item) => {
-        console.debug(item);
         text += `${rewardsOtherPlayer[item]} ${item}<br>`;
       });
       text += '</p>';
@@ -2064,7 +1706,6 @@ export function showRewards(rewards) {
     if (Object.keys(rewardsCity).length) {
       text += '<p><em>City</em><br>';
       Object.keys(rewardsCity).forEach((item) => {
-        console.debug(item);
         text += `${rewardsCity[item]} ${item}<br>`;
       });
       text += '</p>';
@@ -2072,7 +1713,6 @@ export function showRewards(rewards) {
     if (Object.keys(rewardsArmy).length) {
       text += '<p><em>Army</em><br>';
       Object.keys(rewardsArmy).forEach((item) => {
-        console.debug(item);
         text += `${rewardsArmy[item]} ${item}<br>`;
       });
       text += '</p>';
@@ -2114,7 +1754,7 @@ function accumulateMotivatedUnits(msg: any): void {
   );
   if (ability?.amount) {
     City.MilitaryUnits += ability.amount * placedCount;
-    console.debug('[MilUnits] late motivated', msg.id, 'x' + placedCount, '+' + (ability.amount * placedCount), '=', City.MilitaryUnits);
+    dbg('[MilUnits] late motivated', msg.id, 'x' + placedCount, '+' + (ability.amount * placedCount), '=', City.MilitaryUnits);
     setMilitaryUnitsText();
   }
 }
@@ -2157,7 +1797,7 @@ function extractBuildingBoostHints(msg: any): void {
         if (placedCount > 0) {
           MilitaryUnitsAccounted.add(msg.id);
           City.MilitaryUnits += maxMilitary * placedCount;
-          console.debug('[MilUnits] network components', msg.id, 'x' + placedCount, '+' + (maxMilitary * placedCount), '=', City.MilitaryUnits);
+          dbg('[MilUnits] network components', msg.id, 'x' + placedCount, '+' + (maxMilitary * placedCount), '=', City.MilitaryUnits);
           setMilitaryUnitsText();
         }
       }
@@ -2235,48 +1875,15 @@ function processMetadataEntry(msg) {
     }
   } else if (!msg.__class__ || msg.__class__ == 'StaticData') {
     return;
-  } else {
-    // console.debug(msg.name, msg);
-  }
-}
-
-// The onClicked callback function.
-function onClickHandler(info, tab) {
-  console.debug('onClickHandler: ' + JSON.stringify(info));
-
-  if (info.menuItemId == 'radio1' || info.menuItemId == 'radio2') {
-    console.debug(
-      'radio item ' +
-        info.menuItemId +
-        ' was clicked (previous checked state was ' +
-        info.wasChecked +
-        ')',
-    );
-  } else if (info.menuItemId == 'checkbox1' || info.menuItemId == 'checkbox2') {
-    console.debug(JSON.stringify(info));
-    console.debug(
-      'checkbox item ' +
-        info.menuItemId +
-        ' was clicked, state is now: ' +
-        info.checked +
-        ' (previous state was ' +
-        info.wasChecked +
-        ')',
-    );
-  } else {
-    console.debug('item ' + info.menuItemId + ' was clicked');
-    console.debug('info: ' + JSON.stringify(info));
-    console.debug('tab: ' + JSON.stringify(tab));
   }
 }
 
 browser.runtime.onInstalled.addListener(handleInstalled);
-// Check whether new version is installed
 function handleInstalled(details) {
   if (details.reason == 'install') {
-    console.debug(tool.name + ' installed!');
+    dbg(tool.name + ' installed!');
   } else if (details.reason == 'update') {
-    console.debug(
+    dbg(
       tool.name +
         ' updated from ' +
         details.previousVersion +
@@ -2292,7 +1899,6 @@ function handleInstalled(details) {
         tool.version +
         '!',
     );
-    // console.debug(oReq.responseText);
   }
 }
 
@@ -2307,7 +1913,7 @@ function toggleDebug() {
     // logo.src = "/icons/Icon48.png";
   }
   document.getElementById('logo').addEventListener('click', toggleDebug);
-  console.debug('toggleDebug', debugEnabled);
+  dbg('toggleDebug', debugEnabled);
 }
 
 export function removeDebug() {
@@ -2320,13 +1926,13 @@ export function checkDebug() {
 
 var heightRewards = toolOptions.rewardSize;
 function setHeight() {
-  console.debug('mouseup', heightRewards);
+  dbg('mouseup', heightRewards);
   setRewardSize(heightRewards);
 }
 
 browser.runtime.onUpdateAvailable.addListener(handleUpdateAvailable);
 function handleUpdateAvailable(details) {
-  console.debug('updating to version ' + details.version);
+  dbg('updating to version ' + details.version);
   alert('updating to version ' + details.version);
   browser.runtime.reload();
 }
@@ -2336,12 +1942,12 @@ requestingCheck.then(onRequested, onError);
 
 function onRequested(status, details) {
   if (status == 'update_available') {
-    console.debug('update pending...');
+    dbg('update pending...');
     console.log(details.version);
   } else if (status == 'no_update') {
-    console.debug('no update found');
+    dbg('no update found');
   } else if (status == 'throttled') {
-    console.debug("Oops, I'm asking too frequently - I need to back off.");
+    dbg("Oops, I'm asking too frequently - I need to back off.");
   }
 }
 

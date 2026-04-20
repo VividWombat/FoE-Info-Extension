@@ -11,6 +11,16 @@
  * or else visit https://www.gnu.org/licenses/#AGPL
  * ________________________________________________________________
  */
+// Game domain abbreviations used throughout this file:
+//   GB   — Great Building           GBG  — Guild Battleground
+//   GE   — Guild Expedition         GVG  — Guild vs Guild (legacy PvP)
+//   SoH  — Statue of Honor          HoF  — Hall of Fame
+//   FP   — Forge Points             Arc  — The Arc (GB that boosts GB donations)
+//   Era/age codes: ba=Bronze, ia=Iron, ema=Early Middle, hma=High Middle,
+//     lma=Late Middle, cma=Colonial, ina=Industrial, pe=Progressive,
+//     me=Modern, pme=Post-Modern, ce=Contemporary, te=Tomorrow,
+//     fe=Future, af=Arctic Future, of=Oceanic Future, vf=Virtual Future,
+//     sav=Space Age Venus, saab=Space Age Asteroid Belt, etc.
 import { Popover } from 'bootstrap';
 import {
   CityEntityDefs,
