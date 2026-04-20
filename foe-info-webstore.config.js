@@ -164,6 +164,9 @@ module.exports = {
     new CopyPlugin({
       patterns: [{ from: 'src/images/logo90.png', to: 'icons/' }],
     }),
+    new CopyPlugin({
+      patterns: [{ from: './src/extension/sniffer.js', to: './' }],
+    }),
     new WebpackExtensionManifestPlugin({
       config: {
         base: baseManifest,

@@ -878,6 +878,7 @@ function handleWebSocketMessage(msg: import('./services/types').HandlerMessage):
   }) ||
   handleWorldChallengeRequest(msg, worldchallengeDIV);
   // Additional handlers can be chained here as new WS services are discovered.
+  scheduleHudUpdate();
 }
 
 function handleRequestFinished(request: any) {
@@ -1150,7 +1151,7 @@ function handleRequestFinished(request: any) {
                 setAvailableFPText,
               })
             ) {
-              // handled in module
+              scheduleHudUpdate();
             }
           } else if (msg.requestClass == 'ClanBattleService') {
             if (

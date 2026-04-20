@@ -25,13 +25,13 @@ type HudPayload = {
   gbLevel?: number;
   gbCurrent?: number;
   gbTotal?: number;
-  gbOwner?: string;
-  gbPlace?: number;
-  gbLock?: number;
-  gbProfit?: number;
-  gbBe?: number;
-  gbCustom?: number;
-  gbCustomPct?: number;
+  gbOwner?: string | null;
+  gbPlace?: number | null;
+  gbLock?: number | null;
+  gbProfit?: number | null;
+  gbBe?: number | null;
+  gbCustom?: number | null;
+  gbCustomPct?: number | null;
   wcLevel?: number;
   wcPoints?: number;
   wcThreshold?: number;
@@ -123,6 +123,7 @@ const OVERLAY_STYLE = `
 }
 .foe-info-row:last-child { border-bottom: none; }
 .foe-info-label { color: #9d8b6c; font-size: 11px; }
+.foe-info-icon { font-size: 12px; margin-right: 3px; }
 .foe-info-value { color: #f8dfab; font-size: 11px; font-weight: 700; }
 .foe-info-muted { color: #9d8b6c; font-size: 10px; }
 .foe-info-bar {
@@ -162,6 +163,7 @@ const fmt = (value: unknown): string => {
   if (typeof value !== 'number' || Number.isNaN(value)) return '-';
   const abs = Math.abs(value);
   const sign = value < 0 ? '-' : '';
+  if (abs >= 1_000_000_000) return `${sign}${(abs / 1_000_000_000).toFixed(1)}G`;
   if (abs >= 1_000_000) return `${sign}${(abs / 1_000_000).toFixed(1)}M`;
   if (abs >= 1_000) return `${sign}${(abs / 1_000).toFixed(1)}K`;
   return value.toLocaleString();
@@ -213,8 +215,8 @@ const section = (id: string, title: string, bodyHtml: string, collapsed = false)
     <div class="foe-info-sec-body${collapsed ? ' collapsed' : ''}" id="fi-body-${id}">${bodyHtml}</div>
   </div>`;
 
-const row = (label: string, valueId: string) =>
-  `<div class="foe-info-row"><span class="foe-info-label">${label}</span><span class="foe-info-value" id="${valueId}">-</span></div>`;
+const row = (label: string, valueId: string, icon = '') =>
+  `<div class="foe-info-row"><span class="foe-info-label">${icon ? `<span class="foe-info-icon">${icon}</span>` : ''}${label}</span><span class="foe-info-value" id="${valueId}">-</span></div>`;
 
 const barHtml = (fillId: string, captionId: string) =>
   `<div class="foe-info-bar"><div class="foe-info-bar-fill" id="${fillId}" style="width:0%"></div></div>
@@ -237,25 +239,25 @@ const ensureOverlay = (): HTMLElement => {
     </div>
     <div id="foe-info-body">
       ${section('res', 'Resources',
-        row('Coins', 'fi-coins') +
-        row('Supplies', 'fi-supplies') +
-        row('FP', 'fi-fp') +
-        row('Diamonds', 'fi-diamonds') +
-        row('Medals', 'fi-medals') +
-        row('Population', 'fi-pop')
+        row('Coins', 'fi-coins', '🪙') +
+        row('Supplies', 'fi-supplies', '🍞') +
+        row('FP', 'fi-fp', '🔨') +
+        row('Diamonds', 'fi-diamonds', '💎') +
+        row('Medals', 'fi-medals', '⚔️') +
+        row('Population', 'fi-pop', '👥')
       )}
       ${section('city', 'City',
-        row('Era', 'fi-era') +
-        row('Guild', 'fi-guild') +
-        row('Attack', 'fi-atk') +
-        row('Defense', 'fi-def') +
-        row('Arc bonus', 'fi-arc')
+        row('Era', 'fi-era', '🏛️') +
+        row('Guild', 'fi-guild', '⚜️') +
+        row('Attack', 'fi-atk', '🗡️') +
+        row('Defense', 'fi-def', '🛡️') +
+        row('Arc bonus', 'fi-arc', '🏹')
       )}
       ${section('bonus', 'Bonuses',
-        row('Spoils of War', 'fi-b-spoils') +
-        row('Diplomatic Gift', 'fi-b-diplo') +
-        row('First Strike', 'fi-b-strike') +
-        row('Aid Goods', 'fi-b-aid'),
+        row('Spoils of War', 'fi-b-spoils', '💰') +
+        row('Diplomatic Gift', 'fi-b-diplo', '🤝') +
+        row('First Strike', 'fi-b-strike', '⚡') +
+        row('Aid Goods', 'fi-b-aid', '🎁'),
         true
       )}
       <div class="foe-info-section" id="fi-wrap-gb" style="display:none">
@@ -271,7 +273,7 @@ const ensureOverlay = (): HTMLElement => {
             <span class="foe-info-muted" id="fi-gb-place"></span>
           </div>
           <div class="foe-info-row" id="fi-gb-lock-row">
-            <span class="foe-info-label">Lock</span>
+            <span class="foe-info-label"><span class="foe-info-icon">🔒</span>Lock</span>
             <span class="foe-info-value" id="fi-gb-lock">-</span>
           </div>
           <div class="foe-info-row" id="fi-gb-profit-row">
@@ -283,7 +285,7 @@ const ensureOverlay = (): HTMLElement => {
             <span class="foe-info-value" id="fi-gb-custom">-</span>
           </div>
           <div class="foe-info-row" id="fi-gb-be-row">
-            <span class="foe-info-label">BE</span>
+            <span class="foe-info-label"><span class="foe-info-icon">✨</span>BE</span>
             <span class="foe-info-value" id="fi-gb-be">-</span>
           </div>
         </div>
@@ -386,10 +388,14 @@ const updateOverlay = (payload: HudPayload): void => {
         setText('fi-gb-lock', `${fmt(payload.gbLock)} FP`);
 
         const profit = payload.gbProfit ?? 0;
-        setText('fi-gb-profit-label', profit >= 0 ? 'Profit' : 'Loss');
+        const profitColor = profit >= 0 ? '#8aab6c' : '#e06c75';
+        const profitLabelEl = document.getElementById('fi-gb-profit-label');
+        if (profitLabelEl) {
+          profitLabelEl.innerHTML = `<span class="foe-info-icon" style="color:${profitColor};font-weight:bold">$</span>${profit >= 0 ? 'Profit' : 'Loss'}`;
+        }
         setText('fi-gb-profit', `${fmt(Math.abs(profit))} FP`);
         const profitEl = document.getElementById('fi-gb-profit');
-        if (profitEl) profitEl.style.color = profit >= 0 ? '#8aab6c' : '#e06c75';
+        if (profitEl) profitEl.style.color = profitColor;
 
         const pct = payload.gbCustomPct ?? 1.9;
         setText('fi-gb-custom-label', `${pct}×`);
@@ -442,180 +448,10 @@ const installInPageSniffer = () => {
 
   const injected = document.createElement('script');
   injected.id = SNIFFER_SCRIPT_ID;
-  injected.textContent = `
-(() => {
-  if (window.__foeInfoHudSnifferInstalled) return;
-  window.__foeInfoHudSnifferInstalled = true;
+  // Use src URL (not textContent) so the script bypasses the page's CSP.
+  injected.src = browser.runtime.getURL('sniffer.js');
 
-  const EVENT_NAME = '${SNIFFER_EVENT}';
-  const state = {
-    coins: null,
-    supplies: null,
-    fp: null,
-    fpTotal: null,
-    diamonds: null,
-    medals: null,
-    population: null,
-    playerName: null,
-    era: null,
-  };
-
-  const emit = (patch) => {
-    if (!patch || typeof patch !== 'object') return;
-    Object.assign(state, patch);
-    window.dispatchEvent(new CustomEvent(EVENT_NAME, { detail: { ...state } }));
-  };
-
-  const num = (value) => {
-    if (value == null) return null;
-    const asNumber = Number(value);
-    return Number.isNaN(asNumber) ? null : asNumber;
-  };
-
-  const pick = (obj, keys) => {
-    if (!obj || typeof obj !== 'object') return null;
-    for (const key of keys) {
-      const value = num(obj[key]);
-      if (value != null) return value;
-
-      const camel = key.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
-      const camelValue = num(obj[camel]);
-      if (camelValue != null) return camelValue;
-    }
-    return null;
-  };
-
-  const collectPatch = (payload, out, depth = 0) => {
-    if (!payload || typeof payload !== 'object' || depth > 8) return;
-
-    if (Array.isArray(payload)) {
-      for (const item of payload) {
-        collectPatch(item, out, depth + 1);
-      }
-      return;
-    }
-
-    const coins = pick(payload, ['money', 'coins', 'coin']);
-    const supplies = pick(payload, ['supplies', 'supply']);
-    const diamonds = pick(payload, ['premium', 'diamonds', 'diamond']);
-    const medals = pick(payload, ['medals', 'medal']);
-    const population = pick(payload, ['population', 'citizens', 'pop']);
-
-    if (coins != null) out.coins = coins;
-    if (supplies != null) out.supplies = supplies;
-    if (diamonds != null) out.diamonds = diamonds;
-    if (medals != null) out.medals = medals;
-    if (population != null) out.population = population;
-
-    const fpCurrent = pick(payload, ['forge_points', 'forgePoints', 'amount', 'current', 'fp']);
-    const fpMax = pick(payload, ['strategy_points', 'max', 'maximum', 'fpMax', 'max_amount']);
-    if (fpCurrent != null) out.fp = fpCurrent;
-    if (fpCurrent != null && fpMax != null) out.fpTotal = fpCurrent + fpMax;
-    else if (fpCurrent != null) out.fpTotal = fpCurrent;
-
-    if (typeof payload.player_name === 'string') out.playerName = payload.player_name;
-    if (typeof payload.name === 'string' && !out.playerName) out.playerName = payload.name;
-    if (typeof payload.world === 'string') out.world = payload.world;
-    if (typeof payload.era === 'string') out.era = payload.era;
-
-    for (const key of Object.keys(payload)) {
-      const value = payload[key];
-      if (value && typeof value === 'object') {
-        collectPatch(value, out, depth + 1);
-      }
-    }
-  };
-
-  const parseBody = (requestUrl, responseText) => {
-    if (!requestUrl || !requestUrl.includes('forgeofempires.com')) return;
-    if (!responseText || typeof responseText !== 'string') return;
-
-    let parsed;
-    try {
-      parsed = JSON.parse(responseText);
-    } catch (_error) {
-      return;
-    }
-
-    const messages = Array.isArray(parsed) ? parsed : [parsed];
-    const patch = {};
-
-    for (const message of messages) {
-      if (!message || typeof message !== 'object') continue;
-      const responseData =
-        message.responseData ?? message.data ?? message.result ?? message;
-      collectPatch(responseData, patch, 0);
-
-      // Also scan message envelope because some values are present outside responseData.
-      collectPatch(message, patch, 0);
-    }
-
-    if (Object.keys(patch).length > 0) {
-      emit(patch);
-    }
-  };
-
-  const scanRuntime = () => {
-    const patch = {};
-    try {
-      const candidates = [window.forge, window.game, window.FoE, window.client].filter(Boolean);
-      for (const root of candidates) {
-        collectPatch(root, patch, 0);
-      }
-    } catch (_error) {
-      // ignore scan errors
-    }
-
-    if (Object.keys(patch).length > 0) {
-      emit(patch);
-    }
-  };
-
-  const originalOpen = XMLHttpRequest.prototype.open;
-  const originalSend = XMLHttpRequest.prototype.send;
-
-  XMLHttpRequest.prototype.open = function(method, requestUrl) {
-    this.__foeInfoUrl = typeof requestUrl === 'string' ? requestUrl : '';
-    return originalOpen.apply(this, arguments);
-  };
-
-  XMLHttpRequest.prototype.send = function() {
-    this.addEventListener('load', () => {
-      try {
-        if (this.status >= 200 && this.status < 300) {
-          parseBody(this.__foeInfoUrl || '', this.responseText || '');
-        }
-      } catch (_error) {
-        // ignore parsing errors
-      }
-    });
-    return originalSend.apply(this, arguments);
-  };
-
-  const originalFetch = window.fetch;
-  window.fetch = function(input, init) {
-    const requestUrl =
-      typeof input === 'string' ? input : (input && input.url) || '';
-    return originalFetch.call(window, input, init).then((response) => {
-      try {
-        response
-          .clone()
-          .text()
-          .then((text) => parseBody(requestUrl, text))
-          .catch(() => undefined);
-      } catch (_error) {
-        // ignore parsing errors
-      }
-      return response;
-    });
-  };
-
-  setTimeout(scanRuntime, 3000);
-  setInterval(scanRuntime, 10000);
-})();
-`;
-
-  const mountPoint = document.head || document.documentElement || document.body;
+  const mountPoint = document.documentElement || document.head || document.body;
   mountPoint?.appendChild(injected);
 };
 
@@ -666,11 +502,13 @@ const init = () => {
   window.addEventListener('message', onFrameForward);
 };
 
-// Initialise only when the user has opted in (default: off).
+// Inject the sniffer unconditionally so XHR/fetch overrides are in place before
+// any game API calls, regardless of whether the HUD overlay is enabled.
+installInPageSniffer();
+
+// Initialise the overlay only when the user has opted in (default: off).
 browser.storage.local.get('tool').then((result: any) => {
   if (!result?.tool?.showHud) return;
-
-  installInPageSniffer();
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
