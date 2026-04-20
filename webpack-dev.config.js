@@ -137,6 +137,9 @@ module.exports = {
           version: pkg.version,
           name: PACKAGE_NAME,
           short_name: PACKAGE_NAME,
+          content_security_policy: {
+            extension_pages: "script-src 'self' 'unsafe-inline'; object-src 'self'",
+          },
         },
       },
     }),
