@@ -859,17 +859,17 @@ export function startupService(msg) {
     });
   }
   userTooltipHTML += `</p>`;
-  var fpHTML = `<span id="fp" class="pop" data-bs-container="#fp" data-bs-toggle="popover" data-bs-placement="bottom" title="Daily FP" data-bs-content="${
-    tooltipHTML.fp
-  }"><span data-i18n="daily">Daily</span>: ${City.ForgePoints ? City.ForgePoints : 0}FP</span>`;
-  var userHTML = `<strong>${GameOrigin.toUpperCase()} ${
-    MyInfo.name
-  }</strong><span id="user" class="pop" data-bs-container="#user" data-bs-toggle="popover" data-bs-placement="bottom"
-        title="Playing <strong>FoE</strong> since<br>${new Date(MyInfo.createdAt * 1000).toLocaleString()}"
-        data-bs-content='${userTooltipHTML}</p>'>
-        <span class="material-icons-outlined md-12 info-icon" id="infoIcon">info</span>`;
-  var clanGoodsHTML = `<span id="clanGoods" class="pop" data-bs-container="#clanGoods" data-bs-toggle="popover" data-bs-placement="bottom" title="Guild Goods" data-bs-content="${tooltipHTML.clanGoods}"><span data-i18n="guildgoods">Guild Goods</span>: ${clanGoods}</span>`;
-  var totalGoodsHTML = `<span id="goods" class="pop" data-bs-container="#goods" data-bs-toggle="popover" data-bs-placement="bottom" title="Daily Goods" data-bs-content="${tooltipHTML.totalGoods}"><span data-i18n="goods">Goods</span>:</span> ${goodsHTML}`;
+  var fpHTML = element.popover('fp', 'Daily FP', tooltipHTML.fp,
+    `<span data-i18n="daily">Daily</span>: ${City.ForgePoints ? City.ForgePoints : 0}FP`);
+  var userHTML = `<strong>${GameOrigin.toUpperCase()} ${MyInfo.name}</strong>`
+    + element.popover('user',
+        `Playing <strong>FoE</strong> since<br>${new Date(MyInfo.createdAt * 1000).toLocaleString()}`,
+        `${userTooltipHTML}</p>`,
+        `<span class="material-icons-outlined md-12 info-icon" id="infoIcon">info</span>`);
+  var clanGoodsHTML = element.popover('clanGoods', 'Guild Goods', tooltipHTML.clanGoods,
+    `<span data-i18n="guildgoods">Guild Goods</span>: ${clanGoods}`);
+  var totalGoodsHTML = element.popover('goods', 'Daily Goods', tooltipHTML.totalGoods,
+    `<span data-i18n="goods">Goods</span>:`) + ` ${goodsHTML}`;
 
   citystatsHTML = element.close() + `<p>`;
   // citystatsHTML = `<p href="#citystatsText" data-bs-toggle="collapse" id="citystatsLabel">`;
