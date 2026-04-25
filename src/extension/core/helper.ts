@@ -752,7 +752,7 @@ export function fShowIncidents() {
       incidents.innerHTML = `<div id="incidentsTip" class="alert alert-light alert-dismissible show collapsed" role="alert">
             <p id="incidentsTextLabel" href="#incidentsText" data-bs-toggle="collapse">
 			${element.icon('incidentsicon', 'incidentsText', collapse.collapseIncidents)}
-			<span id="incidents_tooltip" class="pop" data-bs-container="#incidents_tooltip" data-bs-toggle="popover" data-bs-placement="bottom" title="Incidents" data-bs-content="${tooltipHTML}"><strong><span data-i18n="incident">Incidents</span>:</strong></span> ${type}</p>
+			${element.popover('incidents_tooltip', 'Incidents', tooltipHTML, `<strong><span data-i18n="incident">Incidents</span>:</strong>`)} ${type}</p>
             ${element.close()}
             <div id="incidentsText" class="collapse ${collapse.collapseIncidents ? '' : 'show'} alert-light">
             ${tooltipHTML}</div></div>`;

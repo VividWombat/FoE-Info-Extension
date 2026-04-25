@@ -50,10 +50,15 @@ function fCloseButton() {
   return '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
 }
 
+function fPopover(id, title, content, inner) {
+  return `<span id="${id}" class="pop" data-bs-container="#${id}" data-bs-toggle="popover" data-bs-placement="bottom" title="${title}" data-bs-content="${content}">${inner}</span>`;
+}
+
 export {
   fCollapseIcon as updateIcon,
   fAddCollapseIcon as icon,
   fCopyButton as copy,
   fPostButton as post,
   fCloseButton as close,
+  fPopover as popover,
 };
